@@ -1,0 +1,70 @@
+﻿@{
+    ViewData["Title"] = "Search Results";
+}
+
+<h2>Search Results</h2>
+
+<a asp-controller="Search" asp-action="Index" class="btn btn-secondary my-3">Back to Search</a>
+
+<!-- Assume 'model' contains the search results with highlights -->
+@foreach (var result in Model.SearchResults.GetResults())
+{
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-2">
+                <strong>File Name:</strong>
+            </div>
+            <div class="col-md-10">
+                @result.Document["metadata_storage_name"]
+            </div>
+        </div>
+        @* <div class="row">
+            <div class="col-md-2">
+                <strong>Description:</strong>
+            </div>
+            <div class="col-md-10">
+                @result.Description
+            </div>
+        </div> *@
+        <div class="row">
+            <div class="col-md-2">
+                <strong>Modified Date:</strong>
+            </div>
+            <div class="col-md-10">
+                @result.Document["metadata_storage_last_modified"]
+            </div>
+        </div>
+        @* <div class="row">
+            <div class="col-md-2">
+                <strong>Modified User:</strong>
+            </div>
+            <div class="col-md-10">
+                @result.ModifiedUser
+            </div>
+        </div> *@
+        @if (result.Highlights != null && result.Highlights.ContainsKey("content"))
+        {
+            foreach (var field in result.Highlights)
+            {
+                <div class="col-md-2">
+                    <strong>@field.Key:</strong>
+                </div>
+                @* <p>@field.Key:</p> *@
+                foreach (var highlight in field.Value)
+                {
+                    <div class="col-md-10">
+                        @Html.Raw(highlight)
+                    </div>
+                    @* <div>@Html.Raw(highlight)</div> *@
+                }
+            }
+        }
+        else
+        {
+            <p>No highlights available.</p>
+        }
+        <hr /> <!-- Add a horizontal rule to separate results -->
+    </div>
+}
+
+<a asp-controller="Search" asp-action="Index" class="btn btn-secondary my-3">Back to Search</a>
