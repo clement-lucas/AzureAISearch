@@ -255,5 +255,8 @@ wwwroot/lib/
 wwwroot/**/*.map  
 wwwroot/**/dist/  
 
+# Ignore development app settings  
+appsettings.json.development  
+
   
 # End of list  
