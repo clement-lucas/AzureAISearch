@@ -258,7 +258,8 @@ wwwroot/**/dist/
 # Ignore development app settings  
 appsettings.json.development  
 
-  
-# End of list  
 /apps/DocumentSearchPortal/wwwroot/lib
 /apps/DocumentSearchPortal/appsettings.Development.json
+  
+# End of list  
+
