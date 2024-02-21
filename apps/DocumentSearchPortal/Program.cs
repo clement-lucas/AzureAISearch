@@ -1,35 +1,45 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using DocumentSearchPortal.Services;
-using Microsoft.Extensions.Configuration;
+using Azure.Identity;
 using DocumentSearchPortal.Models;
+using DocumentSearchPortal.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Add Azure Key Vault to configuration builder  
+builder.Configuration.AddAzureKeyVault(
+    new Uri($"https://{builder.Configuration["KeyVaultName"]}.vault.azure.net/"),
+    new DefaultAzureCredential());
+
+// Add services to the container.  
 builder.Services.AddControllersWithViews();
 
-// Bind the SearchServiceOptions  
-var searchServiceConfig = new SearchServiceConfig();
-builder.Configuration.GetSection("SearchService").Bind(searchServiceConfig);
+// Register the SearchService with the necessary parameters using DI.  
+builder.Services.AddSingleton<SearchService>((s) =>
+{
+    // Use the IOptions pattern to access the SearchServiceConfig  
+    var config = s.GetRequiredService<IConfiguration>();
+    var searchServiceConfig = config.GetSection("SearchService").Get<SearchServiceConfig>();
 
-// Register the SearchService with the necessary parameters.
-// As these are necessary config values, We assume that these will always have values in the config file.
-builder.Services.AddSingleton(s =>
-    new SearchService(
-        searchServiceConfig.ServiceName!,
-        searchServiceConfig.IndexName!, 
-        searchServiceConfig.ApiKey!
-    ));
+    // Ensure that all configuration settings have been retrieved successfully  
+    if (searchServiceConfig.ServiceName == null ||
+        searchServiceConfig.IndexName == null ||
+        searchServiceConfig.ApiKey == null)
+    {
+        throw new InvalidOperationException("Search service configuration is not set correctly.");
+    }
 
+    return new SearchService(
+        searchServiceConfig.ServiceName,
+        searchServiceConfig.IndexName,
+        searchServiceConfig.ApiKey
+    );
+});
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline.  
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Search/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.  
     app.UseHsts();
 }
 else
@@ -44,13 +54,8 @@ app.UseRouting();
 
 app.UseAuthorization();
 
-//app.MapControllerRoute(
-//    name: "default",
-//    pattern: "{controller=Search}/{action=Index}/{id?}");
-
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
-
 
 app.Run();
