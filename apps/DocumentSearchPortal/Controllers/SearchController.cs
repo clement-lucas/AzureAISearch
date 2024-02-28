@@ -9,11 +9,13 @@ namespace DocumentSearchPortal.Controllers
 {
     public class SearchController : Controller
     {
-        private readonly SearchService _searchService;
+        private readonly KeywordSearchService _keywordSearchService;
+        private readonly VectorSearchService _vectorSearchService;
 
-        public SearchController(SearchService searchService)
+        public SearchController(KeywordSearchService keywordSearchService, VectorSearchService vectorSearchService)
         {
-            _searchService = searchService;
+            _keywordSearchService = keywordSearchService;
+            _vectorSearchService = vectorSearchService;
         }
 
         public IActionResult Index()
@@ -21,25 +23,46 @@ namespace DocumentSearchPortal.Controllers
             return View();
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Results(string query)
+        [HttpGet]
+        public async Task<IActionResult> NormalSearchResults(string query)
         {
             if (string.IsNullOrWhiteSpace(query))
             {
                 return View("Index");
             }
 
-            // Perform the search    
-            SearchResults<SearchDocument> results = await _searchService.SearchAsync(query);
+            // Perform the normal index search  
+            SearchResults<SearchDocument> normalResults = await _keywordSearchService.KeywordSearchAsync(query);
 
-            // Create the view model and populate the SearchResults property    
-            var viewModel = new SearchResultViewModel
+            // Create the view model and populate the SearchResults property  
+            var normalViewModel = new SearchResultViewModel
             {
-                SearchResults = results
+                SearchResults = normalResults
             };
 
-            // Pass the view model to the view    
-            return View(viewModel);
+            // Pass the view model to the view  
+            return View("Results", normalViewModel);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> VectorSearchResults(string query)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                return View("Index");
+            }
+
+            // Perform the vector search  
+            SearchResults<SearchDocument> vectorResults = await _vectorSearchService.VectorSearchAsync(query);
+
+            // Create the view model and populate the SearchResults property  
+            var vectorViewModel = new SearchResultViewModel
+            {
+                SearchResults = vectorResults
+            };
+
+            // Pass the view model to the view  
+            return View("Results", vectorViewModel);
         }
 
         // Action to display a custom error page  

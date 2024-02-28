@@ -2,6 +2,12 @@
     ViewData["Title"] = "Search Results";
 }
 
+<style>  
+    .highlighted {  
+        background-color: yellow;  
+    }  
+</style> 
+
 <h2>Search Results</h2>
 
 <a asp-controller="Search" asp-action="Index" class="btn btn-secondary my-3">Back to Search</a>
@@ -11,51 +17,99 @@
 {
     <div class="container mt-4">
         <div class="row">
-            <div class="col-md-2">
+            <div class="col-md-3">
                 <strong>File Name:</strong>
             </div>
-            <div class="col-md-10">
-                @result.Document["metadata_storage_name"]
+            <div class="col-md-9">
+                @(result.Document.ContainsKey("metadata_storage_name") ? result.Document["metadata_storage_name"] : string.Empty)
+                @(result.Document.ContainsKey("title") ? result.Document["title"] : string.Empty)
             </div>
         </div>
-        @* <div class="row">
-            <div class="col-md-2">
-                <strong>Description:</strong>
-            </div>
-            <div class="col-md-10">
-                @result.Description
-            </div>
-        </div> *@
         <div class="row">
-            <div class="col-md-2">
-                <strong>Modified Date:</strong>
+            <div class="col-md-3">
+                <strong>Modified On (修正日):</strong>
             </div>
-            <div class="col-md-10">
-                @result.Document["metadata_storage_last_modified"]
+            <div class="col-md-9">
+                @(result.Document.ContainsKey("metadata_storage_last_modified") ? result.Document["metadata_storage_last_modified"] : string.Empty)
             </div>
         </div>
-        @* <div class="row">
-            <div class="col-md-2">
-                <strong>Modified User:</strong>
+        <div class="row">
+            <div class="col-md-3">
+                <strong>Description (説明):</strong>
             </div>
-            <div class="col-md-10">
-                @result.ModifiedUser
+            <div class="col-md-9">
+                @(result.Document.ContainsKey("Description") ? result.Document["Description"] : string.Empty)                
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-3">
+                <strong>Category (カテゴリー):</strong>
+            </div>
+            <div class="col-md-9">
+                @(result.Document.ContainsKey("Category") ? result.Document["Category"] : string.Empty)                
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-3">
+                <strong>Information ID (情報名):</strong>
+            </div>
+            <div class="col-md-9">
+                @(result.Document.ContainsKey("InformationId") ? result.Document["InformationId"] : string.Empty)                
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-3">
+                <strong>Protocol ID (プロトコルID):</strong>
+            </div>
+            <div class="col-md-9">
+                @(result.Document.ContainsKey("ProtocolId") ? result.Document["ProtocolId"] : string.Empty)                
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-3">
+                <strong>Disclosure Scope (公開範囲):</strong>
+            </div>
+            <div class="col-md-9">
+                @(result.Document.ContainsKey("DisclosureScope") ? result.Document["DisclosureScope"] : string.Empty)                
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-3">
+                <strong>Modified User (修正者):</strong>
+            </div>
+            <div class="col-md-9">
+                @(result.Document.ContainsKey("ModifiedBy") ? result.Document["ModifiedBy"] : string.Empty)                
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-3">
+                <strong>Vector Chunk:</strong>
+            </div>
+            <div class="col-md-9">
+                @(result.Document.ContainsKey("chunk") ? result.Document["chunk"] : string.Empty)
+            </div>
+        </div>
+@*         <div class="row">
+            <div class="col-md-3">
+                <strong>Vector File Name:</strong>
+            </div>
+            <div class="col-md-9">
+                @(result.Document.ContainsKey("title") ? result.Document["title"] : string.Empty)
             </div>
         </div> *@
+        <!-- Add more sections as needed for additional fields -->
         @if (result.Highlights != null && result.Highlights.ContainsKey("content"))
         {
             foreach (var field in result.Highlights)
             {
-                <div class="col-md-2">
-                    <strong>@field.Key:</strong>
+                <div class="col-md-3">
+                    <strong>Search Contents:</strong>
                 </div>
-                @* <p>@field.Key:</p> *@
                 foreach (var highlight in field.Value)
                 {
-                    <div class="col-md-10">
-                        @Html.Raw(highlight)
+                    <div class="col-md-9">
+                        @Html.Raw(highlight.Replace("<b>", "<span class=\"highlighted\">").Replace("</b>", "</span>"))
                     </div>
-                    @* <div>@Html.Raw(highlight)</div> *@
                 }
             }
         }

@@ -4,13 +4,28 @@
 
 <h2>Document Search</h2>
 
-<form asp-controller="Search" asp-action="Results" method="post" class="form-inline">
+<!-- Normal Index Search Form -->
+<h4>Normal Search</h4>
+<form asp-controller="Search" asp-action="NormalSearchResults" method="get" class="form-inline">
     <div class="form-row align-items-center">
         <div class="col-auto">
-            <input type="text" id="query" name="query" class="form-control mb-2" placeholder="Enter search keywords">
+            <input type="text" id="normalQuery" name="query" class="form-control mb-2" placeholder="Enter search keywords">
         </div>
         <div class="col-auto">
-            <button type="submit" class="btn btn-primary mb-2">Search</button>
+            <button type="submit" class="btn btn-secondary mb-2">Normal Search</button>
+        </div>
+    </div>
+</form>
+
+<!-- Vector Search Form -->
+<h4>Vector Search</h4>
+<form asp-controller="Search" asp-action="VectorSearchResults" method="get" class="form-inline">
+    <div class="form-row align-items-center">
+        <div class="col-auto">
+            <input type="text" id="vectorQuery" name="query" class="form-control mb-2" placeholder="Enter search keywords for vector search">
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary mb-2">Vector Search</button>
         </div>
     </div>
 </form>

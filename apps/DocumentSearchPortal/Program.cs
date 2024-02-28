@@ -13,7 +13,7 @@ builder.Configuration.AddAzureKeyVault(
 builder.Services.AddControllersWithViews();
 
 // Register the SearchService with the necessary parameters using DI.  
-builder.Services.AddSingleton<SearchService>((s) =>
+builder.Services.AddSingleton<KeywordSearchService>((s) =>
 {
     // Use the IOptions pattern to access the SearchServiceConfig  
     var config = s.GetRequiredService<IConfiguration>();
@@ -21,15 +21,36 @@ builder.Services.AddSingleton<SearchService>((s) =>
 
     // Ensure that all configuration settings have been retrieved successfully  
     if (searchServiceConfig.ServiceName == null ||
-        searchServiceConfig.IndexName == null ||
+        searchServiceConfig.KeywordIndexName == null ||
         searchServiceConfig.ApiKey == null)
     {
         throw new InvalidOperationException("Search service configuration is not set correctly.");
     }
 
-    return new SearchService(
+    return new KeywordSearchService(
         searchServiceConfig.ServiceName,
-        searchServiceConfig.IndexName,
+        searchServiceConfig.KeywordIndexName,        
+        searchServiceConfig.ApiKey
+    );
+});
+
+builder.Services.AddSingleton<VectorSearchService>((s) =>
+{
+    // Use the IOptions pattern to access the SearchServiceConfig  
+    var config = s.GetRequiredService<IConfiguration>();
+    var searchServiceConfig = config.GetSection("SearchService").Get<SearchServiceConfig>();
+
+    // Ensure that all configuration settings have been retrieved successfully  
+    if (searchServiceConfig.ServiceName == null ||
+        searchServiceConfig.VectorIndexName == null ||
+        searchServiceConfig.ApiKey == null)
+    {
+        throw new InvalidOperationException("Search service configuration is not set correctly.");
+    }
+
+    return new VectorSearchService(
+        searchServiceConfig.ServiceName,
+        searchServiceConfig.VectorIndexName,
         searchServiceConfig.ApiKey
     );
 });
