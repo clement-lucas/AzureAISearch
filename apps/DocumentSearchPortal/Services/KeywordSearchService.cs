@@ -16,11 +16,13 @@ namespace DocumentSearchPortal.Services
 
         public async Task<SearchResults<SearchDocument>> KeywordSearchAsync(string searchText)
         {
+            string filterExpression = "Category eq 'Category1'";//and metadata_storage_last_modified ge 2024-02-28T06:00:00Z
+
             SearchOptions options = new SearchOptions
             {
                 IncludeTotalCount = true,
-                Filter = "",
-                //OrderBy = { "metadata_storage_last_modified desc" }
+                Filter = filterExpression,
+                OrderBy = { "metadata_storage_last_modified desc" }
             };
 
             options.HighlightFields.Add("content"); // Add fields to be highlighted  

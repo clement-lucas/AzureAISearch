@@ -27,13 +27,13 @@ namespace DocumentSearchPortal.Services
             options.Select.Add("chunk");
             options.Select.Add("title");
             //options.Select.Add("metadata_storage_name");
-            //options.Select.Add("metadata_storage_last_modified");
-            //options.Select.Add("Description");
-            //options.Select.Add("Category");
-            //options.Select.Add("InformationId");
-            //options.Select.Add("ProtocolId");
-            //options.Select.Add("DisclosureScope");
-            //options.Select.Add("ModifiedBy");
+            options.Select.Add("metadata_storage_last_modified");
+            options.Select.Add("Description");
+            options.Select.Add("Category");
+            options.Select.Add("InformationId");
+            options.Select.Add("ProtocolId");
+            options.Select.Add("DisclosureScope");
+            options.Select.Add("ModifiedBy");
 
             return await _searchClient.SearchAsync<SearchDocument>(searchText, options);
         }
