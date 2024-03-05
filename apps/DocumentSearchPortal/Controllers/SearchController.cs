@@ -1,9 +1,8 @@
+using Azure.Search.Documents.Models;
 using DocumentSearchPortal.Models;
+using DocumentSearchPortal.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
-using System.Threading.Tasks;
-using Azure.Search.Documents.Models;
-using DocumentSearchPortal.Services;
 
 namespace DocumentSearchPortal.Controllers
 {
@@ -20,49 +19,23 @@ namespace DocumentSearchPortal.Controllers
 
         public IActionResult Index()
         {
-            return View();
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> NormalSearchResults(string query)
-        {
-            if (string.IsNullOrWhiteSpace(query))
+            var viewModel = new SearchResultViewModel
             {
-                return View("Index");
-            }
-
-            // Perform the normal index search  
-            SearchResults<SearchDocument> normalResults = await _keywordSearchService.KeywordSearchAsync(query);
-
-            // Create the view model and populate the SearchResults property  
-            var normalViewModel = new SearchResultViewModel
-            {
-                SearchResults = normalResults
+                NormalSearchResults = TempData["NormalResults"] as SearchResults<SearchDocument>,
+                SearchQuery = TempData["Query"] as string,
+                VectorSearchResults = TempData["VectorResults"] as SearchResults<SearchDocument>,                
             };
 
-            // Pass the view model to the view  
-            return View("Results", normalViewModel);
+            return View(viewModel);
         }
 
-        [HttpGet]
-        public async Task<IActionResult> VectorSearchResults(string query)
+        [HttpPost]
+        public async Task<IActionResult> Search(SearchResultViewModel model)
         {
-            if (string.IsNullOrWhiteSpace(query))
-            {
-                return View("Index");
-            }
 
-            // Perform the vector search  
-            SearchResults<SearchDocument> vectorResults = await _vectorSearchService.VectorSearchAsync(query);
-
-            // Create the view model and populate the SearchResults property  
-            var vectorViewModel = new SearchResultViewModel
-            {
-                SearchResults = vectorResults
-            };
-
-            // Pass the view model to the view  
-            return View("Results", vectorViewModel);
+            model.NormalSearchResults = await _keywordSearchService.KeywordSearchAsync(model);
+            model.VectorSearchResults = await _vectorSearchService.VectorSearchAsync(model);
+            return View("Index", model); // Pass the view model to the Index view directly  
         }
 
         // Action to display a custom error page  

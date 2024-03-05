@@ -1,6 +1,7 @@
 ﻿using Azure;
 using Azure.Search.Documents;
 using Azure.Search.Documents.Models;
+using DocumentSearchPortal.Models;
 
 
 namespace DocumentSearchPortal.Services
@@ -14,37 +15,55 @@ namespace DocumentSearchPortal.Services
             _searchClient = new SearchClient(new Uri($"https://{serviceName}.search.windows.net/"), indexName, new AzureKeyCredential(apiKey));
         }
 
-        public async Task<SearchResults<SearchDocument>> KeywordSearchAsync(string searchText)
+        public async Task<SearchResults<SearchDocument>> KeywordSearchAsync(SearchResultViewModel model)
         {
-            string filterExpression = "Category eq 'Category1'";//and metadata_storage_last_modified ge 2024-02-28T06:00:00Z
+            //string filterExpression = "Category eq 'Category1'";//and metadata_storage_last_modified ge 2024-02-28T06:00:00Z
 
             SearchOptions options = new SearchOptions
-            {
+            {                
                 IncludeTotalCount = true,
-                Filter = filterExpression,
-                OrderBy = { "metadata_storage_last_modified desc" }
+                
+                // Add fields to the select clause to limit fields in the results  
+                Select = { 
+                    "Category", 
+                    "InformationId", 
+                    "ProtocolId", 
+                    "DisclosureScope", 
+                    "ModifiedBy", 
+                    "Description", 
+                    "metadata_storage_name", 
+                    "metadata_storage_path", 
+                    "metadata_storage_last_modified",
+                    "metadata_storage_size",
+                    "content"
+                },
+                
+                HighlightFields = {"content"}, // Add fields to be highlighted  
+                //HighlightPreTag = "<b>",
+                //HighlightPostTag = "</b>"                
             };
 
-            options.HighlightFields.Add("content"); // Add fields to be highlighted  
-            options.HighlightPreTag = "<b>";
-            options.HighlightPostTag = "</b>";
+            if (!string.IsNullOrEmpty(model.FilterExpression))
+            {
+                options.Filter = model.FilterExpression; // Add filter expression.
+            }
 
-            // Add fields to the select clause to limit fields in the results  
-            options.Select.Add("Category");
-            options.Select.Add("InformationId");
-            options.Select.Add("ProtocolId");
-            options.Select.Add("DisclosureScope");
-            options.Select.Add("ModifiedBy");
-            options.Select.Add("Description");
+            if (!string.IsNullOrEmpty(model.OrderByExpression))
+            {
+                options.OrderBy.Add(model.OrderByExpression); // Add OrderBy expression.
+            }
 
-            // Default metadata
-            options.Select.Add("metadata_storage_name");
-            options.Select.Add("metadata_storage_path");
-            options.Select.Add("metadata_storage_last_modified");
-            options.Select.Add("metadata_storage_size");
-            options.Select.Add("content");
+            if (!string.IsNullOrEmpty(model.Top))
+            {
+                options.Size = Convert.ToInt32(model.Top); // Add Top Count.
+            }
 
-            return await _searchClient.SearchAsync<SearchDocument>(searchText, options);
+            if (model.SearchMode?.ToLower() == "all")
+            {
+                options.SearchMode = SearchMode.All; // Use All to match all the keywords. By default, the search mode is Any.
+            }
+
+            return await _searchClient.SearchAsync<SearchDocument>(model.SearchQuery, options);
         }
     }
 }

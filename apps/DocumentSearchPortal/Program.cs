@@ -13,14 +13,14 @@ builder.Configuration.AddAzureKeyVault(
 builder.Services.AddControllersWithViews();
 
 // Register the SearchService with the necessary parameters using DI.  
-builder.Services.AddSingleton<KeywordSearchService>((s) =>
+builder.Services.AddScoped<KeywordSearchService>((s) =>
 {
     // Use the IOptions pattern to access the SearchServiceConfig  
     var config = s.GetRequiredService<IConfiguration>();
     var searchServiceConfig = config.GetSection("SearchService").Get<SearchServiceConfig>();
 
     // Ensure that all configuration settings have been retrieved successfully  
-    if (searchServiceConfig.ServiceName == null ||
+    if (searchServiceConfig?.ServiceName == null ||
         searchServiceConfig.KeywordIndexName == null ||
         searchServiceConfig.ApiKey == null)
     {
@@ -34,14 +34,14 @@ builder.Services.AddSingleton<KeywordSearchService>((s) =>
     );
 });
 
-builder.Services.AddSingleton<VectorSearchService>((s) =>
+builder.Services.AddScoped<VectorSearchService>((s) =>
 {
     // Use the IOptions pattern to access the SearchServiceConfig  
     var config = s.GetRequiredService<IConfiguration>();
     var searchServiceConfig = config.GetSection("SearchService").Get<SearchServiceConfig>();
 
     // Ensure that all configuration settings have been retrieved successfully  
-    if (searchServiceConfig.ServiceName == null ||
+    if (searchServiceConfig?.ServiceName == null ||
         searchServiceConfig.VectorIndexName == null ||
         searchServiceConfig.ApiKey == null)
     {
