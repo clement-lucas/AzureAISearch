@@ -21,16 +21,14 @@ builder.Services.AddScoped<KeywordSearchService>((s) =>
 
     // Ensure that all configuration settings have been retrieved successfully  
     if (searchServiceConfig?.ServiceName == null ||
-        searchServiceConfig.KeywordIndexName == null ||
-        searchServiceConfig.ApiKey == null)
+        searchServiceConfig.KeywordIndexName == null)
     {
         throw new InvalidOperationException("Search service configuration is not set correctly.");
     }
 
     return new KeywordSearchService(
         searchServiceConfig.ServiceName,
-        searchServiceConfig.KeywordIndexName,        
-        searchServiceConfig.ApiKey
+        searchServiceConfig.KeywordIndexName
     );
 });
 
@@ -42,16 +40,14 @@ builder.Services.AddScoped<VectorSearchService>((s) =>
 
     // Ensure that all configuration settings have been retrieved successfully  
     if (searchServiceConfig?.ServiceName == null ||
-        searchServiceConfig.VectorIndexName == null ||
-        searchServiceConfig.ApiKey == null)
+        searchServiceConfig.VectorIndexName == null)
     {
         throw new InvalidOperationException("Search service configuration is not set correctly.");
     }
 
     return new VectorSearchService(
         searchServiceConfig.ServiceName,
-        searchServiceConfig.VectorIndexName,
-        searchServiceConfig.ApiKey
+        searchServiceConfig.VectorIndexName
     );
 });
 

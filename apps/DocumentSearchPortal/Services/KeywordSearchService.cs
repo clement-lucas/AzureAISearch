@@ -1,4 +1,5 @@
 ﻿using Azure;
+using Azure.Identity;
 using Azure.Search.Documents;
 using Azure.Search.Documents.Models;
 using DocumentSearchPortal.Models;
@@ -10,9 +11,13 @@ namespace DocumentSearchPortal.Services
     {
         private readonly SearchClient _searchClient;
 
-        public KeywordSearchService(string serviceName, string indexName, string apiKey)
+        public KeywordSearchService(string serviceName, string indexName)
         {
-            _searchClient = new SearchClient(new Uri($"https://{serviceName}.search.windows.net/"), indexName, new AzureKeyCredential(apiKey));
+            // DO NOT USE API KEY
+            //_searchClient = new SearchClient(new Uri($"https://{serviceName}.search.windows.net/"), indexName, new AzureKeyCredential("apikey"));
+            
+            // Instead configure Managed Identity for the App service and use the App Service's Default Credentials (Managed Identity)
+            _searchClient = new SearchClient(new Uri($"https://{serviceName}.search.windows.net/"), indexName, new DefaultAzureCredential());
         }
 
         public async Task<SearchResults<SearchDocument>> KeywordSearchAsync(SearchResultViewModel model)
