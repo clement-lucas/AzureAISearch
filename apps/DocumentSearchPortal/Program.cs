@@ -13,7 +13,7 @@ builder.Configuration.AddAzureKeyVault(
 builder.Services.AddControllersWithViews();
 
 // Register the SearchService with the necessary parameters using DI.  
-builder.Services.AddScoped<KeywordSearchService>((s) =>
+builder.Services.AddScoped<SearchService>((s) =>
 {
     // Use the IOptions pattern to access the SearchServiceConfig  
     var config = s.GetRequiredService<IConfiguration>();
@@ -21,48 +21,36 @@ builder.Services.AddScoped<KeywordSearchService>((s) =>
 
     // Ensure that all configuration settings have been retrieved successfully  
     if (searchServiceConfig?.ServiceName == null ||
-        searchServiceConfig.KeywordIndexName == null)
+        searchServiceConfig.KeywordIndexName == null ||
+        searchServiceConfig.VectorIndexName == null ||
+        searchServiceConfig.HybridIndexName == null)
     {
         throw new InvalidOperationException("Search service configuration is not set correctly.");
     }
 
-    return new KeywordSearchService(
+    return new SearchService(
         searchServiceConfig.ServiceName,
-        searchServiceConfig.KeywordIndexName
-    );
-});
-
-builder.Services.AddScoped<VectorSearchService>((s) =>
-{
-    // Use the IOptions pattern to access the SearchServiceConfig  
-    var config = s.GetRequiredService<IConfiguration>();
-    var searchServiceConfig = config.GetSection("SearchService").Get<SearchServiceConfig>();
-
-    // Ensure that all configuration settings have been retrieved successfully  
-    if (searchServiceConfig?.ServiceName == null ||
-        searchServiceConfig.VectorIndexName == null)
-    {
-        throw new InvalidOperationException("Search service configuration is not set correctly.");
-    }
-
-    return new VectorSearchService(
-        searchServiceConfig.ServiceName,
-        searchServiceConfig.VectorIndexName
+        searchServiceConfig.KeywordIndexName,
+        searchServiceConfig.VectorIndexName,
+        searchServiceConfig.HybridIndexName
     );
 });
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.  
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Search/Error");
-    app.UseHsts();
-}
-else
-{
-    app.UseDeveloperExceptionPage();
-}
+//// Configure the HTTP request pipeline.  
+//if (!app.Environment.IsDevelopment())
+//{
+//    app.UseExceptionHandler("/Search/Error");
+//    app.UseHsts();
+//}
+//else
+//{
+//    app.UseDeveloperExceptionPage();
+//}
+
+app.UseExceptionHandler("/Search/Error");
+app.UseHsts();
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();

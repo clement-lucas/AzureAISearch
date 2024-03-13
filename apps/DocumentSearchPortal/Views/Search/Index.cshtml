@@ -1,4 +1,7 @@
-﻿@model DocumentSearchPortal.Models.SearchResultViewModel
+﻿@using System.Text.RegularExpressions
+@using System.Text
+
+@model DocumentSearchPortal.Models.SearchResultViewModel
 
 @{
     ViewData["Title"] = "Search";
@@ -20,13 +23,16 @@
                 <input type="text" id="normalQuery" name="SearchQuery" class="form-control mb-2" value="@Model.SearchQuery" placeholder="Enter search keywords">
             </div>
             <div class="col-auto">
-                <input type="text" id="filterExpression" name="FilterExpression" class="form-control mb-2" value="@Model.FilterExpression" placeholder="Enter filter expression. Example: Category eq 'Category1'and metadata_storage_last_modified ge 2024-02-28T06:00:00Z">
+                <input type="text" id="filterExpression" name="FilterExpression" class="form-control mb-2" value="@Model.FilterExpression" placeholder="Enter filter expression. Example: Category eq 'Category1'and metadata_storage_last_modified ge 2024-02-28">
             </div>
             <div class="col-auto">
                 <input type="text" id="orderbyExpression" name="OrderByExpression" class="form-control mb-2" value="@Model.OrderByExpression" placeholder="Enter order expression. Example: metadata_storage_last_modified desc">
             </div>
             <div class="col-auto">
-                <input type="text" id="topCount" name="Top" class="form-control mb-2" value="@Model.Top" placeholder="Enter count of results. Example: 5">
+                <input type="text" id="topAISearch" name="TopAISearch" class="form-control mb-2" value="@Model.TopAISearch" placeholder="Enter the count for AI Search. Example: 5">
+            </div>
+            <div class="col-auto">
+                <input type="text" id="topPortal" name="TopPortal" class="form-control mb-2" value="@Model.TopPortal" placeholder="Enter the count to display in Portal. Example: 2">
             </div>
             <div class="col-auto">
                 <input type="text" id="searchMode" name="SearchMode" class="form-control mb-2" value="@Model.SearchMode" placeholder="Enter Search Mode. Example: Any or All">
@@ -36,9 +42,10 @@
             </div>
         </div>
     </form>
-
+</div>
+<div class="row">
     <!-- Display Normal Search Results -->
-    <div class="col-md-6">
+    <div class="row">
         @if (Model?.NormalSearchResults != null && Model?.NormalSearchResults?.TotalCount != 0)
         {
             <h3>Normal Search Results</h3>
@@ -120,16 +127,58 @@
                     <!-- Highlighted search contents -->
                     @if (result.Highlights != null && result.Highlights.ContainsKey("content"))
                     {
-                        foreach (var highlight in result.Highlights["content"])
+                        int highlightCount = 0;
+                        int topPortalCount = string.IsNullOrEmpty(Model.TopPortal) ? result.Document.Count : Convert.ToInt16(Model.TopPortal);
+                        foreach (var fullHighlight in result.Highlights["content"])
                         {
+                            if (highlightCount >= topPortalCount) // Limit to selected count
+                            {
+                                break;
+                            }
+                            // Process each highlight to extract about 10 characters before and after the keyword
+                            // Find all matches first
+                            var matches = System.Text.RegularExpressions.Regex.Matches(fullHighlight, @"<em>(.*?)<\/em>");
+
+                            StringBuilder processedHighlightsBuilder = new StringBuilder();
+                            int lastEndIndex = -1;
+
+                            foreach (Match match in matches)
+                            {
+                                string keyword = match.Groups[1].Value;
+                                int keywordIndex = match.Index;
+                                int start = Math.Max(keywordIndex - 10, 0);
+                                int end = Math.Min(keywordIndex + match.Length + 10, fullHighlight.Length);
+
+                                // Ensure non-overlapping sections
+                                if (start <= lastEndIndex)
+                                {
+                                    continue; // Skip this match as its section overlaps with the previous one
+                                }
+
+                                int length = end - start;
+                                string surroundingText = fullHighlight.Substring(start, length);
+                                processedHighlightsBuilder.Append(surroundingText);
+
+                                lastEndIndex = end; // Update the last end index to ensure non-overlapping sections
+
+                                // Break if we reach the limit
+                                if (++highlightCount >= topPortalCount)
+                                {
+                                    break;
+                                }
+                            }
+
+                            string processedHighlight = processedHighlightsBuilder.ToString();
+
                             <div class="row">
                                 <div class="col-md-3">
                                     <strong>結果</strong>
                                 </div>
                                 <div class="col-md-9">
-                                    @Html.Raw(highlight.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))
+                                    @Html.Raw(processedHighlight.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))
                                 </div>
                             </div>
+                            highlightCount++;
                         }
                     }
                     else
@@ -140,6 +189,7 @@
                             </div>
                         </div>
                     }
+
                     <hr /> <!-- Add a horizontal rule to separate results -->
                 </div>
             }
@@ -151,7 +201,7 @@
     </div>
 
     <!-- Display Vector Search Results -->
-    <div class="col-md-6">
+    <div class="row">
         @if (Model?.VectorSearchResults != null && Model?.VectorSearchResults?.TotalCount != 0)
         {
             <h3>Vector Search Results</h3>
@@ -238,29 +288,6 @@
                             @(result.Document.ContainsKey("chunk") ? result.Document["chunk"] : string.Empty)
                         </div>
                     </div>
-                    <!-- Highlighted search contents -->
-@*                     @if (result.Highlights != null && result.Highlights.ContainsKey("chunk"))
-                    {
-                        foreach (var highlight in result.Highlights["chunk"])
-                        {
-                            <div class="row">
-                                <div class="col-md-3">
-                                    <strong>結果</strong>
-                                </div>
-                                <div class="col-md-9">
-                                    @Html.Raw(highlight.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))
-                                </div>
-                            </div>
-                        }
-                    }
-                    else
-                    {
-                        <div class="row">
-                            <div class="col-md-12">
-                                <p>No highlights available.</p>
-                            </div>
-                        </div>
-                    } *@
                     <hr /> <!-- Add a horizontal rule to separate results -->
                 </div>
             }
@@ -270,4 +297,180 @@
             <p>No vector search results found.</p>
         }
     </div>
+
+    <!-- Display Hybrid Search Results -->
+    <div class="row">
+        @if (Model?.HybridSearchResults != null && Model?.HybridSearchResults?.TotalCount != 0)
+        {
+            <h3>Hybrid Search Results with Semantic Reranking</h3>
+            @foreach (var result in Model.HybridSearchResults.GetResults())
+            {
+                <div class="container mt-4">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>Score</strong>
+                        </div>
+                        <div class="col-md-9">
+                            @(result.Score != null ? result.Score : string.Empty)
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>Semantic Reranker Score</strong>
+                        </div>
+                        <div class="col-md-9">
+                            @(result.SemanticSearch.RerankerScore != null ? result.SemanticSearch.RerankerScore : string.Empty)
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>ファイル名</strong>
+                        </div>
+                        <div class="col-md-9">
+                            @(result.Document.ContainsKey("title") ? result.Document["title"] : string.Empty)
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>修正日</strong>
+                        </div>
+                        <div class="col-md-9">
+                            @(result.Document.ContainsKey("metadata_storage_last_modified") ? result.Document["metadata_storage_last_modified"] : string.Empty)
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>説明</strong>
+                        </div>
+                        <div class="col-md-9">
+                            @(result.Document.ContainsKey("Description") ? result.Document["Description"] : string.Empty)
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>カテゴリー</strong>
+                        </div>
+                        <div class="col-md-9">
+                            @(result.Document.ContainsKey("Category") ? result.Document["Category"] : string.Empty)
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>情報名</strong>
+                        </div>
+                        <div class="col-md-9">
+                            @(result.Document.ContainsKey("InformationId") ? result.Document["InformationId"] : string.Empty)
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>プロトコルID</strong>
+                        </div>
+                        <div class="col-md-9">
+                            @(result.Document.ContainsKey("ProtocolId") ? result.Document["ProtocolId"] : string.Empty)
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>公開範囲</strong>
+                        </div>
+                        <div class="col-md-9">
+                            @(result.Document.ContainsKey("DisclosureScope") ? result.Document["DisclosureScope"] : string.Empty)
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>修正者</strong>
+                        </div>
+                        <div class="col-md-9">
+                            @(result.Document.ContainsKey("ModifiedBy") ? result.Document["ModifiedBy"] : string.Empty)
+                        </div>
+                    </div>
+                    <!-- Highlighted search contents -->
+                    @if (result.SemanticSearch.Captions != null)
+                    {
+                        int captionCount = 0;
+                        int topPortalCount = string.IsNullOrEmpty(Model.TopPortal)? result.Document.Count: Convert.ToInt16(Model.TopPortal);
+                        foreach (var caption in result.SemanticSearch.Captions)
+                        {
+                            if (captionCount >= topPortalCount) // Limit to selected count
+                            {
+                                break;
+                            }
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <strong>Caption</strong>
+                                </div>
+                                <div class="col-md-9">
+                                    @if (caption?.Highlights != null && caption?.Highlights != "")
+                                    {
+                                        @Html.Raw(caption?.Highlights?.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))
+                                    }
+                                    else
+                                    {
+                                    @(caption?.Text)
+                                    }
+                                    
+                                </div>
+                            </div>
+                            captionCount++;
+                        }
+                    }
+                    else
+                    {
+                        <div class="row">
+                            <div class="col-md-12">
+                                <p>No highlights available.</p>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Highlighted search contents -->
+                    @if (result.Highlights != null && result.Highlights.ContainsKey("chunk"))
+                    {
+                        int highlightCount = 0;
+                        int topPortalCount = string.IsNullOrEmpty(Model.TopPortal) ? result.Document.Count : Convert.ToInt16(Model.TopPortal);
+                        foreach (var highlight in result.Highlights["chunk"])
+                        {
+                            if (highlightCount >= topPortalCount) // Limit to selected count
+                            {
+                                break;
+                            }
+                            <div class="row">
+                            <div class="col-md-3">
+                            <strong>Highlights from chunk</strong>
+                            </div>
+                            <div class="col-md-9">
+                            @Html.Raw(highlight.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))
+                            </div>
+                            </div>
+                            highlightCount++;
+                        }
+                    }
+                    else
+                    {
+                        <div class="row">
+                        <div class="col-md-12">
+                        <p>No highlights available.</p>
+                        </div>
+                        </div>
+                    }
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>Chunk</strong>
+                        </div>
+                        <div class="col-md-9">
+                            @(result.Document.ContainsKey("chunk") ? result.Document["chunk"] : string.Empty)
+                        </div>
+                    </div>
+                    <hr /> <!-- Add a horizontal rule to separate results -->
+                </div>
+            }
+        }
+        else
+        {
+            <p>No Hybrid search results found.</p>
+        }
+    </div>
+
 </div>

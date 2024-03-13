@@ -8,33 +8,50 @@ namespace DocumentSearchPortal.Controllers
 {
     public class SearchController : Controller
     {
-        private readonly KeywordSearchService _keywordSearchService;
-        private readonly VectorSearchService _vectorSearchService;
+        private readonly SearchService _searchService;
 
-        public SearchController(KeywordSearchService keywordSearchService, VectorSearchService vectorSearchService)
+        public SearchController(SearchService searchService)
         {
-            _keywordSearchService = keywordSearchService;
-            _vectorSearchService = vectorSearchService;
+            _searchService = searchService;
         }
 
         public IActionResult Index()
         {
-            var viewModel = new SearchResultViewModel
-            {
-                NormalSearchResults = TempData["NormalResults"] as SearchResults<SearchDocument>,
-                SearchQuery = TempData["Query"] as string,
-                VectorSearchResults = TempData["VectorResults"] as SearchResults<SearchDocument>,                
-            };
-
+            var viewModel = GetSearchResultViewModelFromTempData();
             return View(viewModel);
         }
+
+        private SearchResultViewModel GetSearchResultViewModelFromTempData()
+        {
+            return new SearchResultViewModel
+            {
+                SearchQuery = TempData["Query"] as string,
+                TopAISearch = TempData["TopAISearch"] as string,
+                TopPortal = TempData["TopPortal"] as string,
+                FilterExpression = TempData["FilterExpression"] as string,
+                OrderByExpression = TempData["OrderByExpression"] as string,
+                SearchMode = TempData["SearchMode"] as string                
+
+            };
+        }
+
 
         [HttpPost]
         public async Task<IActionResult> Search(SearchResultViewModel model)
         {
 
-            model.NormalSearchResults = await _keywordSearchService.KeywordSearchAsync(model);
-            model.VectorSearchResults = await _vectorSearchService.VectorSearchAsync(model);
+            model.NormalSearchResults = await _searchService.KeywordSearchAsync(model);
+            model.VectorSearchResults = await _searchService.VectorSearchAsync(model);
+            model.HybridSearchResults = await _searchService.HybridSearchAsync(model);
+
+            //Store additional search parameters in TempData
+            TempData["Query"] = model.SearchQuery;
+            TempData["FilterExpression"] = model.FilterExpression;
+            TempData["OrderByExpression"] = model.OrderByExpression;
+            TempData["TopAISearch"] = model.TopAISearch;
+            TempData["TopPortal"] = model.TopPortal;
+            TempData["SearchMode"] = model.SearchMode;
+
             return View("Index", model); // Pass the view model to the Index view directly  
         }
 
@@ -58,9 +75,9 @@ namespace DocumentSearchPortal.Controllers
             return View(errorViewModel);
         }
 
-        public class ErrorViewModel
-        {
-            public string? RequestId { get; set; } 
-        }
+        //public class ErrorViewModel
+        //{
+        //    public string? RequestId { get; set; } 
+        //}
     }
 }
