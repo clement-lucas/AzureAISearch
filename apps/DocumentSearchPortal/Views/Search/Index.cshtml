@@ -4,51 +4,98 @@
 @model DocumentSearchPortal.Models.SearchResultViewModel
 
 @{
-    ViewData["Title"] = "Search";
+    ViewData["Title"] = "ドキュメント検索";
 }
 
-<style>
-    .highlighted {
-        background-color: yellow;
-    }
-</style>
+<h2>@ViewData["Title"]</h2>
 
-<h2>Document Search</h2>
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Initialize the multi-select dropdown
+            // Example using jQuery for a basic multi-select, consider using a plugin for enhanced UX
+            $('#selectedIndexes').select2();
+        });
+    </script>
+}
 
 <!-- Search Controls -->
+
 <div class="row">
     <form asp-controller="Search" asp-action="Search" method="post">
-        <div class="form-row align-items-center">
-            <div class="col-auto">
-                <input type="text" id="normalQuery" name="SearchQuery" class="form-control mb-2" value="@Model.SearchQuery" placeholder="Enter search keywords">
+            <!-- Search Keywords -->
+            <div class="form-group row">
+                <label for="searchQuery" class="col-sm-2 col-form-label">検索キーワード</label>
+                <div class="col-sm-10">
+                <input type="text" id="searchQuery" name="SearchQuery" class="form-control" value="@Model.SearchQuery" placeholder="検索キーワードを入力">
+                </div>
             </div>
-            <div class="col-auto">
-                <input type="text" id="filterExpression" name="FilterExpression" class="form-control mb-2" value="@Model.FilterExpression" placeholder="Enter filter expression. Example: Category eq 'Category1'and metadata_storage_last_modified ge 2024-02-28">
+
+            <!-- Filter Expression and Order By Expression -->
+            <div class="form-group row">
+                <label for="filterExpression" class="col-sm-2 col-form-label">フィルター式</label>
+                <div class="col-sm-4">
+                    <input type="text" id="filterExpression" name="FilterExpression" class="form-control" value="@Model.FilterExpression" placeholder="例：Category eq 'Category1'and metadata_storage_last_modified ge 2024-02-28">
+                </div>
+                <label for="orderbyExpression" class="col-sm-2 col-form-label">OrderBy式</label>
+                <div class="col-sm-4">
+                <input type="text" id="orderbyExpression" name="OrderByExpression" class="form-control" value="@Model.OrderByExpression" placeholder="例：metadata_storage_last_modified desc">
+                </div>
             </div>
-            <div class="col-auto">
-                <input type="text" id="orderbyExpression" name="OrderByExpression" class="form-control mb-2" value="@Model.OrderByExpression" placeholder="Enter order expression. Example: metadata_storage_last_modified desc">
+
+            <!-- Search Results Count and Highlight Results Count -->
+            <div class="form-group row">
+                <label for="countSearchResult" class="col-sm-2 col-form-label">検索結果数</label>
+                <div class="col-sm-4">
+                <input type="number" id="countSearchResult" name="CountSearchResult" class="form-control" value="@Model.CountSearchResult" placeholder="例：5">
+                </div>
+                <label for="countHighlightResult" class="col-sm-2 col-form-label">ハイライト結果数</label>
+                <div class="col-sm-4">
+                <input type="number" id="countHighlightResult" name="CountHighlightResult" class="form-control" value="@Model.CountHighlightResult" placeholder="例：2">
+                </div>
             </div>
-            <div class="col-auto">
-                <input type="text" id="topAISearch" name="TopAISearch" class="form-control mb-2" value="@Model.TopAISearch" placeholder="Enter the count for AI Search. Example: 5">
+
+            <!-- Vector Search Count and Max characters Count -->
+            <div class="form-group row">
+                <label for="countVectorResult" class="col-sm-2 col-form-label">ベクトル結果の数</label>
+                <div class="col-sm-4">
+                <input type="number" id="countVectorResult" name="countVectorResult" class="form-control" value="@Model.CountVectorResult" placeholder="例：2">
+                </div>
+                <label for="countPrefixSuffix" class="col-sm-2 col-form-label">前後の文字数</label>
+                <div class="col-sm-4">
+                <input type="number" id="countPrefixSuffix" name="CountPrefixSuffix" class="form-control" value="@Model.CountPrefixSuffix" placeholder="例：10">
+                </div>
             </div>
-            <div class="col-auto">
-                <input type="text" id="topPortal" name="TopPortal" class="form-control mb-2" value="@Model.TopPortal" placeholder="Enter the count to display in Portal. Example: 2">
+
+            <!-- Search Mode -->
+            <div class="form-group row">
+                <label for="searchMode" class="col-sm-2 col-form-label">検索モード</label>
+                <div class="col-sm-4">
+                <input type="text" id="searchMode" name="SearchMode" class="form-control" value="@Model.SearchMode" placeholder="例：Any or All">
+                </div>
+            <label for="selectedIndexes">1 つまたは複数のインデックスを選択してください</label>
+            <div class="col-sm-4">
+                <select asp-for="SelectedIndexes" asp-items="@(new SelectList(Model.AvailableIndexes))" class="form-control" id="selectedIndexes" multiple="multiple">
+                </select>
             </div>
-            <div class="col-auto">
-                <input type="text" id="searchMode" name="SearchMode" class="form-control mb-2" value="@Model.SearchMode" placeholder="Enter Search Mode. Example: Any or All">
             </div>
-            <div class="col-auto">
-                <button type="submit" class="btn btn-primary mb-2">Search</button>
+
+            <!-- Submit Button -->
+            <div class="form-group row">
+                <div class="col-sm-10">
+                <button type="submit" class="btn btn-primary">検索</button>
+                </div>
             </div>
-        </div>
     </form>
 </div>
+<hr /> <!-- Add a horizontal rule to separate results -->
+
 <div class="row">
+    <h3>キーワード検索結果</h3>
     <!-- Display Normal Search Results -->
     <div class="row">
-        @if (Model?.NormalSearchResults != null && Model?.NormalSearchResults?.TotalCount != 0)
-        {
-            <h3>Normal Search Results</h3>
+        @if (Model?.NormalSearchResults?.TotalCount > 0)
+        {            
             @foreach (var result in Model.NormalSearchResults.GetResults())
             {
                 <div class="container mt-4">
@@ -124,68 +171,84 @@
                             @(result.Document.ContainsKey("ModifiedBy") ? result.Document["ModifiedBy"] : string.Empty)
                         </div>
                     </div>
+
                     <!-- Highlighted search contents -->
-                    @if (result.Highlights != null && result.Highlights.ContainsKey("content"))
+                    @if (result?.Highlights?.Count > 0 && result.Highlights.ContainsKey("content"))
                     {
-                        int highlightCount = 0;
-                        int topPortalCount = string.IsNullOrEmpty(Model.TopPortal) ? result.Document.Count : Convert.ToInt16(Model.TopPortal);
-                        foreach (var fullHighlight in result.Highlights["content"])
+                        var countPrefixSuffix = Model.CountPrefixSuffix.HasValue ? Convert.ToInt32(Model.CountPrefixSuffix) : 0;
+
+                        foreach (var originalSentence in result.Highlights["content"])
                         {
-                            if (highlightCount >= topPortalCount) // Limit to selected count
+                            if (countPrefixSuffix > 0)
                             {
-                                break;
-                            }
-                            // Process each highlight to extract about 10 characters before and after the keyword
-                            // Find all matches first
-                            var matches = System.Text.RegularExpressions.Regex.Matches(fullHighlight, @"<em>(.*?)<\/em>");
+                                // Pattern to match highlights
+                                string pattern = @"<em>.*?</em>";
 
-                            StringBuilder processedHighlightsBuilder = new StringBuilder();
-                            int lastEndIndex = -1;
+                                // Use a StringBuilder to build the result
+                                StringBuilder adjustedSentence = new StringBuilder();
+                                int lastPosition = 0;
 
-                            foreach (Match match in matches)
-                            {
-                                string keyword = match.Groups[1].Value;
-                                int keywordIndex = match.Index;
-                                int start = Math.Max(keywordIndex - 10, 0);
-                                int end = Math.Min(keywordIndex + match.Length + 10, fullHighlight.Length);
-
-                                // Ensure non-overlapping sections
-                                if (start <= lastEndIndex)
+                                foreach (Match match in Regex.Matches(originalSentence, pattern))
                                 {
-                                    continue; // Skip this match as its section overlaps with the previous one
+                                    // Calculate prefix
+                                    int prefixStart = Math.Max(lastPosition, match.Index - countPrefixSuffix);
+                                    if (prefixStart > lastPosition)
+                                    {
+                                        // If not at the beginning, append "***"
+                                        //if (lastPosition != 0) 
+                                        adjustedSentence.Append(" ***");
+                                        adjustedSentence.Append(originalSentence.Substring(prefixStart, match.Index - prefixStart));
+                                    }
+                                    else if (lastPosition == 0 && match.Index != 0)
+                                    {
+                                        // If at the beginning but not the very start, prepend "***"
+                                        adjustedSentence.Append("***");
+                                    }
+
+                                    // Append the highlight
+                                    adjustedSentence.Append(match.Value);
+
+                                    // Update lastPosition to the end of the current match
+                                    lastPosition = match.Index + match.Length;
                                 }
 
-                                int length = end - start;
-                                string surroundingText = fullHighlight.Substring(start, length);
-                                processedHighlightsBuilder.Append(surroundingText);
-
-                                lastEndIndex = end; // Update the last end index to ensure non-overlapping sections
-
-                                // Break if we reach the limit
-                                if (++highlightCount >= topPortalCount)
+                                // Calculate and append suffix if necessary
+                                if (lastPosition < originalSentence.Length)
                                 {
-                                    break;
+                                    int suffixEnd = Math.Min(originalSentence.Length, lastPosition + countPrefixSuffix);
+                                    if (suffixEnd > lastPosition)
+                                    {
+                                        adjustedSentence.Append(originalSentence.Substring(lastPosition, suffixEnd - lastPosition));
+                                    }
+                                    // Append "***" if not at the end
+                                    if (suffixEnd < originalSentence.Length) adjustedSentence.Append("***");
                                 }
+
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <strong>コンテンツからのハイライト (トリミングあり)</strong>
+                                    </div>
+                                    <div class="col-md-9">
+                                        @Html.Raw(adjustedSentence.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))
+                                    </div>
+                                </div>
                             }
-
-                            string processedHighlight = processedHighlightsBuilder.ToString();
-
-                            <div class="row">
-                                <div class="col-md-3">
-                                    <strong>結果</strong>
+                                // Display the full highlight without trimming
+                                <div class="row">
+                                    <div class="col-md-3">
+                                    <strong>コンテンツからのハイライト</strong>
+                                    </div>
+                                    <div class="col-md-9">
+                                    @Html.Raw(originalSentence.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))
+                                    </div>
                                 </div>
-                                <div class="col-md-9">
-                                    @Html.Raw(processedHighlight.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))
-                                </div>
-                            </div>
-                            highlightCount++;
                         }
                     }
                     else
                     {
                         <div class="row">
                             <div class="col-md-12">
-                                <p>No highlights available.</p>
+                                <p>コンテンツに利用可能なハイライトはありません。</p>
                             </div>
                         </div>
                     }
@@ -196,15 +259,15 @@
         }
         else
         {
-            <p>No normal search results found.</p>
+            <p>キーワード検索の結果は見つかりません。</p>
         }
     </div>
 
     <!-- Display Vector Search Results -->
     <div class="row">
-        @if (Model?.VectorSearchResults != null && Model?.VectorSearchResults?.TotalCount != 0)
-        {
-            <h3>Vector Search Results</h3>
+        <h3>ベクトル検索結果</h3>
+        @if (Model?.VectorSearchResults?.TotalCount > 0)
+        {            
             @foreach (var result in Model.VectorSearchResults.GetResults())
             {
                 <div class="container mt-4">
@@ -234,7 +297,7 @@
                     </div>
                     <div class="row">
                         <div class="col-md-3">
-                            <strong>説明:</strong>
+                            <strong>説明</strong>
                         </div>
                         <div class="col-md-9">
                             @(result.Document.ContainsKey("Description") ? result.Document["Description"] : string.Empty)
@@ -242,7 +305,7 @@
                     </div>
                     <div class="row">
                         <div class="col-md-3">
-                            <strong>カテゴリー:</strong>
+                            <strong>カテゴリー</strong>
                         </div>
                         <div class="col-md-9">
                             @(result.Document.ContainsKey("Category") ? result.Document["Category"] : string.Empty)
@@ -282,7 +345,7 @@
                     </div>
                     <div class="row">
                         <div class="col-md-3">
-                            <strong>Vector Chunk:</strong>
+                            <strong>ベクトルチャンク</strong>
                         </div>
                         <div class="col-md-9">
                             @(result.Document.ContainsKey("chunk") ? result.Document["chunk"] : string.Empty)
@@ -294,15 +357,15 @@
         }
         else
         {
-            <p>No vector search results found.</p>
+            <p>ベクトル検索の結果は見つかりません。</p>
         }
     </div>
 
     <!-- Display Hybrid Search Results -->
     <div class="row">
-        @if (Model?.HybridSearchResults != null && Model?.HybridSearchResults?.TotalCount != 0)
-        {
-            <h3>Hybrid Search Results with Semantic Reranking</h3>
+        <h3>セマンティック再ランキングを含むハイブリッド検索結果</h3>
+        @if (Model?.HybridSearchResults?.TotalCount > 0)
+        {            
             @foreach (var result in Model.HybridSearchResults.GetResults())
             {
                 <div class="container mt-4">
@@ -387,19 +450,13 @@
                         </div>
                     </div>
                     <!-- Highlighted search contents -->
-                    @if (result.SemanticSearch.Captions != null)
+                    @if (result?.SemanticSearch?.Captions?.Any() == true)
                     {
-                        int captionCount = 0;
-                        int topPortalCount = string.IsNullOrEmpty(Model.TopPortal)? result.Document.Count: Convert.ToInt16(Model.TopPortal);
                         foreach (var caption in result.SemanticSearch.Captions)
                         {
-                            if (captionCount >= topPortalCount) // Limit to selected count
-                            {
-                                break;
-                            }
                             <div class="row">
                                 <div class="col-md-3">
-                                    <strong>Caption</strong>
+                                    <strong>キャプション</strong>
                                 </div>
                                 <div class="col-md-9">
                                     @if (caption?.Highlights != null && caption?.Highlights != "")
@@ -413,45 +470,37 @@
                                     
                                 </div>
                             </div>
-                            captionCount++;
                         }
                     }
                     else
                     {
                         <div class="row">
                             <div class="col-md-12">
-                                <p>No highlights available.</p>
+                                <p>セマンティックキャプションはありません。</p>
                             </div>
                         </div>
                     }
 
                     <!-- Highlighted search contents -->
-                    @if (result.Highlights != null && result.Highlights.ContainsKey("chunk"))
+                    @if (result?.Highlights?.Count > 0 && result.Highlights.ContainsKey("chunk"))
                     {
-                        int highlightCount = 0;
-                        int topPortalCount = string.IsNullOrEmpty(Model.TopPortal) ? result.Document.Count : Convert.ToInt16(Model.TopPortal);
                         foreach (var highlight in result.Highlights["chunk"])
                         {
-                            if (highlightCount >= topPortalCount) // Limit to selected count
-                            {
-                                break;
-                            }
                             <div class="row">
-                            <div class="col-md-3">
-                            <strong>Highlights from chunk</strong>
+                                <div class="col-md-3">
+                                    <strong>チャンクのハイライト</strong>
+                                </div>
+                                <div class="col-md-9">
+                                @Html.Raw(highlight.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))
+                                </div>
                             </div>
-                            <div class="col-md-9">
-                            @Html.Raw(highlight.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))
-                            </div>
-                            </div>
-                            highlightCount++;
                         }
                     }
                     else
                     {
                         <div class="row">
                         <div class="col-md-12">
-                        <p>No highlights available.</p>
+                                <p>チャンクに利用可能なハイライトはありません。</p>
                         </div>
                         </div>
                     }
@@ -469,7 +518,179 @@
         }
         else
         {
-            <p>No Hybrid search results found.</p>
+            <p>ハイブリッド検索結果は見つかりません。</p>
+        }
+    </div>
+
+    <h3>SQL+キーワード検索結果</h3>
+    <!-- Display SQL + Normal Search Results -->
+    <div class="row">
+        @if (Model?.CombinedSearchResults?.TotalCount > 0)
+        {
+            @foreach (var result in Model.CombinedSearchResults.GetResults())
+            {
+                <div class="container mt-4">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>Score</strong>
+                        </div>
+                        <div class="col-md-9">
+                            @(result.Score != null ? result.Score : string.Empty)
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>ファイル名</strong>
+                        </div>
+                        <div class="col-md-9">
+                            @(result.Document.ContainsKey("metadata_storage_name") ? result.Document["metadata_storage_name"] : string.Empty)
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>修正日</strong>
+                        </div>
+                        <div class="col-md-9">
+                            @(result.Document.ContainsKey("metadata_storage_last_modified") ? result.Document["metadata_storage_last_modified"] : string.Empty)
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>説明</strong>
+                        </div>
+                        <div class="col-md-9">
+                            @(result.Document.ContainsKey("Description") ? result.Document["Description"] : string.Empty)
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>カテゴリー</strong>
+                        </div>
+                        <div class="col-md-9">
+                            @(result.Document.ContainsKey("CategoryName") ? result.Document["CategoryName"] : string.Empty)
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>情報名</strong>
+                        </div>
+                        <div class="col-md-9">
+                            @(result.Document.ContainsKey("InformationName") ? result.Document["InformationName"] : string.Empty)
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>プロトコルID</strong>
+                        </div>
+                        <div class="col-md-9">
+                            @(result.Document.ContainsKey("ProtocolName") ? result.Document["ProtocolName"] : string.Empty)
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>公開範囲</strong>
+                        </div>
+                        <div class="col-md-9">
+                            @(result.Document.ContainsKey("DisclosureScopeName") ? result.Document["DisclosureScopeName"] : string.Empty)
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>修正者</strong>
+                        </div>
+                        <div class="col-md-9">
+                            @(result.Document.ContainsKey("ModifiedByName") ? result.Document["ModifiedByName"] : string.Empty)
+                        </div>
+                    </div>
+
+                    <!-- Highlighted search contents -->
+                    @if (result?.Highlights?.Count > 0 && result.Highlights.ContainsKey("content"))
+                    {
+                        var countPrefixSuffix = Model.CountPrefixSuffix.HasValue ? Convert.ToInt32(Model.CountPrefixSuffix) : 0;
+
+                        foreach (var originalSentence in result.Highlights["content"])
+                        {
+                            if (countPrefixSuffix > 0)
+                            {
+                                // Pattern to match highlights
+                                string pattern = @"<em>.*?</em>";
+
+                                // Use a StringBuilder to build the result
+                                StringBuilder adjustedSentence = new StringBuilder();
+                                int lastPosition = 0;
+
+                                foreach (Match match in Regex.Matches(originalSentence, pattern))
+                                {
+                                    // Calculate prefix
+                                    int prefixStart = Math.Max(lastPosition, match.Index - countPrefixSuffix);
+                                    if (prefixStart > lastPosition)
+                                    {
+                                        // If not at the beginning, append "***"
+                                        //if (lastPosition != 0)
+                                        adjustedSentence.Append(" ***");
+                                        adjustedSentence.Append(originalSentence.Substring(prefixStart, match.Index - prefixStart));
+                                    }
+                                    else if (lastPosition == 0 && match.Index != 0)
+                                    {
+                                        // If at the beginning but not the very start, prepend "***"
+                                        adjustedSentence.Append("***");
+                                    }
+
+                                    // Append the highlight
+                                    adjustedSentence.Append(match.Value);
+
+                                    // Update lastPosition to the end of the current match
+                                    lastPosition = match.Index + match.Length;
+                                }
+
+                                // Calculate and append suffix if necessary
+                                if (lastPosition < originalSentence.Length)
+                                {
+                                    int suffixEnd = Math.Min(originalSentence.Length, lastPosition + countPrefixSuffix);
+                                    if (suffixEnd > lastPosition)
+                                    {
+                                        adjustedSentence.Append(originalSentence.Substring(lastPosition, suffixEnd - lastPosition));
+                                    }
+                                    // Append "***" if not at the end
+                                    if (suffixEnd < originalSentence.Length) adjustedSentence.Append("***");
+                                }
+
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <strong>コンテンツからのハイライト (トリミングあり)</strong>
+                                    </div>
+                                    <div class="col-md-9">
+                                        @Html.Raw(adjustedSentence.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))
+                                    </div>
+                                </div>
+                            }
+                            // Display the full highlight without trimming
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <strong>コンテンツのハイライト</strong>
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.Raw(originalSentence.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="row">
+                            <div class="col-md-12">
+                                <p>コンテンツに利用可能なハイライトはありません。</p>
+                            </div>
+                        </div>
+                    }
+
+                    <hr /> <!-- Add a horizontal rule to separate results -->
+                </div>
+            }
+        }
+        else
+        {
+            <p>SQL+キーワード検索の結果は見つかりません。</p>
         }
     </div>
 
