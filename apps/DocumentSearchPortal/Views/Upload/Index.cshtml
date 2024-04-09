@@ -1,0 +1,137 @@
+﻿@model DocumentSearchPortal.Models.ViewModels.UploadViewModel  
+  
+@{  
+    ViewData["Title"] = "ドキュメントアップロード";
+} 
+
+<h2 class="mb-4">@ViewData["Title"]</h2>
+<h4 class="mb-4">このページを使用してアップロードされたファイルは、SQL+Normal Index にのみアップロードされます。</h4>
+
+@if (ViewBag.Message != null)
+{
+    <div class="alert alert-info">
+        @ViewBag.Message
+    </div>
+}
+
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Message"]
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
+
+<form asp-action="Upload" asp-controller="Upload" method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+    <div class="form-group">
+        <label class="custom-file-label" for="document">アップロードするドキュメントを選択してください:</label>
+        <input type="file" name="files" multiple class="form-control-file" id="document" required>
+        <div class="invalid-feedback">ファイルが選択されていません。</div>
+    </div>
+
+    <div class="form-group">
+        <label for="CategoryId">カテゴリー</label>
+        <select asp-for="SelectedCategoryId" asp-items="@(new SelectList(Model.Categories, "Value", "Text"))" class="form-control">
+            <option value="">カテゴリーを選択してください</option>
+        </select>
+        <span asp-validation-for="SelectedCategoryId" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label>公開範囲</label>
+        <div>
+            @foreach (var scope in Model.DisclosureScopes)
+            {
+                <div class="form-check">
+                    <input asp-for="SelectedDisclosureScopeId" class="form-check-input" type="radio" value="@scope.Value" />
+                    <label class="form-check-label">@scope.Text</label>
+                </div>
+            }
+        </div>
+        <span asp-validation-for="SelectedDisclosureScopeId" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label for="ProtocolId">プロトコルID</label>
+        <select asp-for="SelectedProtocolId" asp-items="Model.Protocols" class="form-control">
+            <option value="">プロトコルを選択してください</option>
+        </select>
+        <span asp-validation-for="SelectedProtocolId" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label for="InformationId">情報名</label>
+        <select id="informationIdSelect" asp-for="SelectedInformationId" asp-items="Model.InformationIds" class="form-control">
+            <option value="">情報名を選択してください</option>
+        </select>
+        <span asp-validation-for="SelectedInformationId" class="text-danger"></span>
+        or
+        <input type="text" id="informationIdInput" asp-for="SelectedInformationId" class="form-control" placeholder="Or enter a new ID" style="display:none;" />
+        <button type="button" id="toggleInputButton" class="btn btn-link">新規追加</button>
+    </div>
+
+
+    <div class="form-group">
+        <label for="Description">説明</label>
+        <textarea asp-for="Description" class="form-control" placeholder="説明を入力してください"></textarea>
+        <span asp-validation-for="Description" class="text-danger"></span>
+    </div>
+
+@*     <div class="form-group">
+        <label for="SelectedContainers">1つ以上の保存場所を選択してください</label>
+        <select asp-for="SelectedContainers" asp-items="@(new SelectList(Model.AvailableContainers))" class="form-control" id="selectedIndexes" multiple="multiple">
+        </select>
+    </div> *@
+
+    <button type="submit" class="btn btn-primary">アップロード</button>
+</form>
+
+<div id="file-list-container" class="mt-3"></div>
+
+@* <a href="@Url.Action("Index", "Home")" class="btn btn-primary mt-3">ホームへ</a> *@
+
+@section Scripts {
+
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const fileInput = document.getElementById('document');
+            const fileListContainer = document.getElementById('file-list-container');
+
+            fileInput.addEventListener('change', function () {
+                const files = Array.from(fileInput.files);
+                const fileList = document.createElement('ol');
+
+                files.forEach((file) => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = file.name;
+                    fileList.appendChild(listItem);
+                });
+
+                fileListContainer.innerHTML = '';
+                fileListContainer.appendChild(fileList);
+            });
+        });
+        
+        document.getElementById('toggleInputButton').addEventListener('click', function () {
+                var select = document.getElementById('informationIdSelect');
+                var input = document.getElementById('informationIdInput');
+                if (input.style.display === 'none') {
+                    select.style.display = 'none';
+                    input.style.display = '';
+                    input.value = ''; // Clear input field when switching
+                } else {
+                    select.style.display = '';
+                    input.style.display = 'none';
+                }
+            });
+    </script>
+}

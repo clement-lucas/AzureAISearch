@@ -1,62 +1,76 @@
 using Azure.Identity;
 using DocumentSearchPortal.Models;
-using DocumentSearchPortal.Services;
+using Microsoft.Extensions.Configuration;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using DocumentSearchPortal.Data;
+using DocumentSearchPortal.Services.Search;
+using DocumentSearchPortal.Services.Upload;
+using Azure.Search.Documents.Indexes;
+using Azure;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.Identity.Web;
+using Microsoft.Identity.Web.UI;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.  
+//builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
+//    .AddMicrosoftIdentityWebApp(builder.Configuration.GetSection("AzureAd"));
 
 // Add Azure Key Vault to configuration builder  
 builder.Configuration.AddAzureKeyVault(
     new Uri($"https://{builder.Configuration["KeyVaultName"]}.vault.azure.net/"),
     new DefaultAzureCredential());
 
+builder.Services.Configure<SearchServiceConfig>(builder.Configuration.GetSection("SearchService"));
+
+
 // Add services to the container.  
+//builder.Services.AddControllersWithViews(options =>
+//{
+//    var policy = new AuthorizationPolicyBuilder()
+//        .RequireAuthenticatedUser()
+//        .Build();
+//    options.Filters.Add(new AuthorizeFilter(policy));
+//});
+
+
+//builder.Services.AddRazorPages().AddMicrosoftIdentityUI();
+
 builder.Services.AddControllersWithViews();
 
-// Register the SearchService with the necessary parameters using DI.  
-builder.Services.AddScoped<SearchService>((s) =>
+// Add scoped services for Search and Upload functionalities  
+builder.Services.AddScoped<ISearchService, SearchService>();
+builder.Services.AddScoped<IUploadService, UploadService>();
+
+// Register ApplicationDbContext using the DbConnectionString from SearchServiceConfig  
+builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
 {
-    // Use the IOptions pattern to access the SearchServiceConfig  
-    var config = s.GetRequiredService<IConfiguration>();
-    var searchServiceConfig = config.GetSection("SearchService").Get<SearchServiceConfig>();
-
-    // Ensure that all configuration settings have been retrieved successfully  
-    if (searchServiceConfig?.ServiceName == null ||
-        searchServiceConfig.KeywordIndexName == null ||
-        searchServiceConfig.VectorIndexName == null ||
-        searchServiceConfig.HybridIndexName == null)
-    {
-        throw new InvalidOperationException("Search service configuration is not set correctly.");
-    }
-
-    return new SearchService(
-        searchServiceConfig.ServiceName,
-        searchServiceConfig.KeywordIndexName,
-        searchServiceConfig.VectorIndexName,
-        searchServiceConfig.HybridIndexName
-    );
+    SearchServiceConfig searchServiceConfig = serviceProvider.GetRequiredService<IOptions<SearchServiceConfig>>().Value;
+    options.UseSqlServer(searchServiceConfig.SQLDbConnectionString);
 });
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
-//// Configure the HTTP request pipeline.  
-//if (!app.Environment.IsDevelopment())
+//if (app.Environment.IsDevelopment())
 //{
-//    app.UseExceptionHandler("/Search/Error");
-//    app.UseHsts();
+    app.UseDeveloperExceptionPage();
 //}
 //else
 //{
-//    app.UseDeveloperExceptionPage();
+//    app.UseExceptionHandler("/Home/Error");
+//    app.UseHsts();
 //}
-
-app.UseExceptionHandler("/Search/Error");
-app.UseHsts();
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(
