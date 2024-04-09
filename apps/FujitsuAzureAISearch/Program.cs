@@ -37,10 +37,10 @@ namespace FujitsuAzureAISearch
             await UploadFilesFromFolder(storageConfig);
 
             // Call the method to create index
-            await CreateSearchIndexAsync(aiSearchConfig);
+            //await CreateSearchIndexAsync(aiSearchConfig);
 
             // Call the method to create indexer
-            await CreateBlobIndexerAsync(storageConfig, aiSearchConfig);
+            //await CreateBlobIndexerAsync(storageConfig, aiSearchConfig);
 
 
             Console.ReadLine();
