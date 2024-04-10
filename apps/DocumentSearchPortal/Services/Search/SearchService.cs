@@ -19,6 +19,7 @@ namespace DocumentSearchPortal.Services.Search
         private readonly SearchClient _hybridCustomVectorSearchClient;
         private readonly SearchClient _combinedSearchClient;
         private readonly SearchClient _securitySearchClient;
+        private readonly SearchClient _aiEnrichmentSearchClient;
         private readonly SearchServiceConfig _config;
 
         /// <summary>
@@ -36,6 +37,8 @@ namespace DocumentSearchPortal.Services.Search
             _combinedSearchClient = new SearchClient(new Uri($"https://{options.Value.ServiceName}.search.windows.net/"), _config.CombinedIndexName, new DefaultAzureCredential());
             _securitySearchClient = new SearchClient(new Uri($"https://{options.Value.ServiceName}.search.windows.net/"), _config.SecurityIndexName, new DefaultAzureCredential());
             _hybridCustomVectorSearchClient = new SearchClient(new Uri($"https://{options.Value.ServiceName}.search.windows.net/"), _config.HybridVectorAzFuncIndexName, new DefaultAzureCredential());
+            _aiEnrichmentSearchClient = new SearchClient(new Uri($"https://{_config.ServiceName}.search.windows.net/"), _config.AIEnrichmentIndexName, new DefaultAzureCredential());
+
         }
 
         /// <summary>
@@ -78,6 +81,11 @@ namespace DocumentSearchPortal.Services.Search
             if (model.SelectedIndexes.Contains("Document Security"))
             {
                 model.SecuritySearchResults = await SecuritySearchAsync(model);
+            }
+
+            if (model.SelectedIndexes.Contains("Normal + AI Enrichment (Image)"))
+            {
+                model.AIEnrichmentSearchResults = await AIEnrichmentSearchAsync(model);
             }
 
             return model;
@@ -336,6 +344,29 @@ namespace DocumentSearchPortal.Services.Search
             }
 
             return await _securitySearchClient.SearchAsync<SearchDocument>(model.SearchQuery, options);
+        }
+
+        public async Task<SearchResults<SearchDocument>> AIEnrichmentSearchAsync(SearchResultViewModel model)
+        {
+            SearchOptions options = SetupCommonSearchOptions(model);
+            options.Select.Add("content");
+            options.Select.Add("metadata_storage_name");
+            options.Select.Add("text");
+            options.Select.Add("layoutText");
+            options.Select.Add("imageTags");
+            options.Select.Add("imageCaption");
+            options.Select.Add("merged_content");
+
+            if (model.CountHighlightResult.HasValue && model.CountHighlightResult > 0)
+            {
+                options.HighlightFields.Add($"merged_content-{model.CountHighlightResult}");
+            }
+            else
+            {
+                options.HighlightFields.Add("merged_content");
+            }
+
+            return await _aiEnrichmentSearchClient.SearchAsync<SearchDocument>(model.SearchQuery, options);
         }
     }
 }

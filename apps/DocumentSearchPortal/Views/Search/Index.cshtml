@@ -24,77 +24,78 @@
 
 <div class="row">
     <form asp-controller="Search" asp-action="Search" method="post">
-            <!-- Search Keywords -->
-            <div class="form-group row">
-                <label for="searchQuery" class="col-sm-2 col-form-label">検索キーワード</label>
-                <div class="col-sm-10">
-                <input type="text" id="searchQuery" name="SearchQuery" class="form-control" value="@Model.SearchQuery" placeholder="検索キーワードを入力">
-                </div>
+        <!-- Search Keywords -->
+        <div class="form-group row">
+            <label for="searchQuery" class="col-sm-2 col-form-label">検索キーワード</label>
+            <div class="col-sm-10">
+            <input type="text" id="searchQuery" name="SearchQuery" class="form-control" value="@Model.SearchQuery" placeholder="検索キーワードを入力">
             </div>
+        </div>
 
-            <!-- Filter Expression and Order By Expression -->
-            <div class="form-group row">
-                <label for="filterExpression" class="col-sm-2 col-form-label">フィルター式</label>
-                <div class="col-sm-4">
-                    <input type="text" id="filterExpression" name="FilterExpression" class="form-control" value="@Model.FilterExpression" placeholder="例：Category eq 'Category1'and metadata_storage_last_modified ge 2024-02-28">
-                </div>
-                <label for="orderbyExpression" class="col-sm-2 col-form-label">OrderBy式</label>
-                <div class="col-sm-4">
-                <input type="text" id="orderbyExpression" name="OrderByExpression" class="form-control" value="@Model.OrderByExpression" placeholder="例：metadata_storage_last_modified desc">
-                </div>
-            </div>
-
-            <!-- Search Results Count and Highlight Results Count -->
-            <div class="form-group row">
-                <label for="countSearchResult" class="col-sm-2 col-form-label">検索結果数</label>
-                <div class="col-sm-4">
-                <input type="number" id="countSearchResult" name="CountSearchResult" class="form-control" value="@Model.CountSearchResult" placeholder="例：5">
-                </div>
-                <label for="countHighlightResult" class="col-sm-2 col-form-label">ハイライト結果数</label>
-                <div class="col-sm-4">
-                <input type="number" id="countHighlightResult" name="CountHighlightResult" class="form-control" value="@Model.CountHighlightResult" placeholder="例：2">
-                </div>
-            </div>
-
-            <!-- Vector Search Count and Max characters Count -->
-            <div class="form-group row">
-                <label for="countVectorResult" class="col-sm-2 col-form-label">ベクトル結果の数</label>
-                <div class="col-sm-4">
-                <input type="number" id="countVectorResult" name="countVectorResult" class="form-control" value="@Model.CountVectorResult" placeholder="例：2">
-                </div>
-                <label for="countPrefixSuffix" class="col-sm-2 col-form-label">前後の文字数</label>
-                <div class="col-sm-4">
-                <input type="number" id="countPrefixSuffix" name="CountPrefixSuffix" class="form-control" value="@Model.CountPrefixSuffix" placeholder="例：10">
-                </div>
-            </div>
-
-            <!-- Search Mode -->
-            <div class="form-group row">
-                <label for="searchMode" class="col-sm-2 col-form-label">検索モード</label>
-                <div class="col-sm-4">
-                <input type="text" id="searchMode" name="SearchMode" class="form-control" value="@Model.SearchMode" placeholder="例：Any or All">
-                </div>
-            <label for="selectedIndexes">1 つまたは複数のインデックスを選択してください</label>
+        <!-- Filter Expression and Order By Expression -->
+        <div class="form-group row">
+            <label for="filterExpression" class="col-sm-2 col-form-label">フィルター式</label>
             <div class="col-sm-4">
-                <select asp-for="SelectedIndexes" asp-items="@(new SelectList(Model.AvailableIndexes))" class="form-control" id="selectedIndexes" multiple="multiple">
+                <input type="text" id="filterExpression" name="FilterExpression" class="form-control" value="@Model.FilterExpression" placeholder="例：Category eq 'Category1'and metadata_storage_last_modified ge 2024-02-28">
+            </div>
+            <label for="orderbyExpression" class="col-sm-2 col-form-label">OrderBy式</label>
+            <div class="col-sm-4">
+            <input type="text" id="orderbyExpression" name="OrderByExpression" class="form-control" value="@Model.OrderByExpression" placeholder="例：metadata_storage_last_modified desc">
+            </div>
+        </div>
+
+        <!-- Search Results Count and Highlight Results Count -->
+        <div class="form-group row">
+            <label for="countSearchResult" class="col-sm-2 col-form-label">検索結果数</label>
+            <div class="col-sm-4">
+            <input type="number" id="countSearchResult" name="CountSearchResult" class="form-control" value="@Model.CountSearchResult" placeholder="例：5">
+            </div>
+            <label for="countHighlightResult" class="col-sm-2 col-form-label">ハイライト結果数</label>
+            <div class="col-sm-4">
+            <input type="number" id="countHighlightResult" name="CountHighlightResult" class="form-control" value="@Model.CountHighlightResult" placeholder="例：2">
+            </div>
+        </div>
+
+        <!-- Vector Search Count and Max characters Count -->
+        <div class="form-group row">
+            <label for="countVectorResult" class="col-sm-2 col-form-label">ベクトル結果の数</label>
+            <div class="col-sm-4">
+            <input type="number" id="countVectorResult" name="countVectorResult" class="form-control" value="@Model.CountVectorResult" placeholder="例：2">
+            </div>
+            <label for="countPrefixSuffix" class="col-sm-2 col-form-label">前後の文字数</label>
+            <div class="col-sm-4">
+            <input type="number" id="countPrefixSuffix" name="CountPrefixSuffix" class="form-control" value="@Model.CountPrefixSuffix" placeholder="例：10">
+            </div>
+        </div>
+
+        <!-- Search Mode -->
+        <div class="form-group row">
+            <label for="searchMode" class="col-sm-2 col-form-label">検索モード</label>
+            <div class="col-sm-4">
+                <input type="text" id="searchMode" name="SearchMode" class="form-control" value="@Model.SearchMode" placeholder="例：Any or All">
+            </div>
+            <label for="selectedIndexes" class="col-sm-2 col-form-label">1 つまたは複数のインデックスを選択してください</label>
+            <div class="col-sm-4">
+                <select asp-for="SelectedIndexes" asp-items="@(new SelectList(Model.AvailableIndexes))" class="form-control" id="selectedIndexes" multiple="multiple" size="@Model.AvailableIndexes.Count()">
                 </select>
             </div>
-            </div>
+        </div>
 
-            <!-- Submit Button -->
-            <div class="form-group row">
-                <div class="col-sm-10">
-                <button type="submit" class="btn btn-primary">検索</button>
-                </div>
+
+        <!-- Submit Button -->
+        <div class="form-group row">
+            <div class="col-sm-10">
+            <button type="submit" class="btn btn-primary">検索</button>
             </div>
+        </div>
     </form>
 </div>
 <hr /> <!-- Add a horizontal rule to separate results -->
 
-<div class="row">
-    <h3>キーワード検索結果</h3>
+<div class="row">    
     <!-- Display Normal Search Results -->
     <div class="row">
+        <h3>キーワード検索結果</h3>
         @if (Model?.NormalSearchResults?.TotalCount > 0)
         {            
             @foreach (var result in Model.NormalSearchResults.GetResults())
@@ -816,10 +817,10 @@
             <p>SQL+キーワード検索の結果は見つかりません。</p>
         }
     </div>
-
-    <h3>Document Security Index検索結果</h3>
+    
     <!-- Display Normal Search Results -->
     <div class="row">
+        <h3>Document Security Index検索結果</h3>
         @if (Model?.SecuritySearchResults?.TotalCount > 0)
         {
             @foreach (var result in Model.SecuritySearchResults.GetResults())
@@ -968,6 +969,232 @@
         else
         {
             <p>Document Security Index検索の結果は見つかりません。</p>
+        }
+    </div>
+
+    <!-- Display Normal Search Results -->
+    <div class="row">
+        <h3>AI Enrichment(画像)検索結果</h3>
+        @if (Model?.AIEnrichmentSearchResults?.TotalCount > 0)
+        {
+            @foreach (var result in Model.AIEnrichmentSearchResults.GetResults())
+            {
+                <div class="container mt-4">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>Score</strong>
+                        </div>
+                        <div class="col-md-9">
+                            @(result.Score != null ? result.Score : string.Empty)
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>ファイル名</strong>
+                        </div>
+                        <div class="col-md-9">
+                            @(result.Document.ContainsKey("metadata_storage_name") ? result.Document["metadata_storage_name"] : string.Empty)
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>修正日</strong>
+                        </div>
+                        <div class="col-md-9">
+                            @(result.Document.ContainsKey("metadata_storage_last_modified") ? result.Document["metadata_storage_last_modified"] : string.Empty)
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>説明</strong>
+                        </div>
+                        <div class="col-md-9">
+                            @(result.Document.ContainsKey("Description") ? result.Document["Description"] : string.Empty)
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>カテゴリー</strong>
+                        </div>
+                        <div class="col-md-9">
+                            @(result.Document.ContainsKey("Category") ? result.Document["Category"] : string.Empty)
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>情報名</strong>
+                        </div>
+                        <div class="col-md-9">
+                            @(result.Document.ContainsKey("InformationId") ? result.Document["InformationId"] : string.Empty)
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>プロトコルID</strong>
+                        </div>
+                        <div class="col-md-9">
+                            @(result.Document.ContainsKey("ProtocolId") ? result.Document["ProtocolId"] : string.Empty)
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>公開範囲</strong>
+                        </div>
+                        <div class="col-md-9">
+                            @(result.Document.ContainsKey("DisclosureScope") ? result.Document["DisclosureScope"] : string.Empty)
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>修正者</strong>
+                        </div>
+                        <div class="col-md-9">
+                            @(result.Document.ContainsKey("ModifiedBy") ? result.Document["ModifiedBy"] : string.Empty)
+                        </div>
+                    </div>
+
+                    <!-- Highlighted search contents -->
+                    @if (result?.Highlights?.Count > 0 && result.Highlights.ContainsKey("merged_content"))
+                    {
+                        var countPrefixSuffix = Model.CountPrefixSuffix.HasValue ? Convert.ToInt32(Model.CountPrefixSuffix) : 0;
+
+                        foreach (var originalSentence in result.Highlights["merged_content"])
+                        {
+                            if (countPrefixSuffix > 0)
+                            {
+                                string adjustedSentence = HighlightTextHelper.ProcessText(originalSentence, countPrefixSuffix);
+
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <strong>コンテンツからのハイライト (トリミングあり)</strong>
+                                    </div>
+                                    <div class="col-md-9">
+                                        @Html.Raw(adjustedSentence)
+                                    </div>
+                                </div>
+
+                            }
+
+                            // Display the full highlight without trimming
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <strong>コンテンツからのハイライト</strong>
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.Raw(originalSentence.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="row">
+                            <div class="col-md-12">
+                                <p>コンテンツに利用可能なハイライトはありません。</p>
+                            </div>
+                        </div>
+                    }
+
+                    @if (result.Document.ContainsKey("text") && result.Document["text"] is object[] texts)
+                    {
+                        <div class="row">
+                            <div class="col-md-3">
+                                <strong>OCR text</strong>
+                            </div>
+                            <div class="col-md-9">
+                                @for (int i = 0; i < texts.Length; i++)
+                                {
+                                    var originaltext = texts[i] as string; // Safely cast to string.
+                                    if (originaltext != null)
+                                    {
+                                        <text>[</text>
+
+                                        @Html.Raw(originaltext)
+
+                                        <text>]</text>
+                                        if (i < texts.Length - 1)
+                                        {
+                                            @:,
+                                        }
+                                    }
+                                }
+                            </div>
+                        </div>
+                    }
+
+
+                    @*@if (result.Document.ContainsKey("layoutText"))
+                    {
+                        <div class="row">
+                            <div class="col-md-3">
+                                <strong>OCR layoutText</strong>
+                            </div>
+
+                            @foreach (var originaltext in result.Document["layoutText"])
+                            {
+                                <div class="row">
+                                <div class="col-md-9">
+                                    @Html.Raw(originaltext)
+                                </div>
+                                </div>
+                            }
+                        </div>
+                    } *@
+
+                    @if (result.Document.ContainsKey("imageTags") && result.Document["imageTags"] is object[] tags)
+                    {
+                        <div class="row">
+                            <div class="col-md-3">
+                                <strong>画像分析 imageTags</strong>
+                            </div>
+                            <div class="col-md-9">
+                                @for (int i = 0; i < tags.Length; i++)
+                                {
+                                    var tag = tags[i] as string; // Safely cast to string.
+                                    if (tag != null)
+                                    {
+                                        <text>[</text>
+
+                                        @Html.Raw(tag)
+
+                                        <text>]</text>
+                                        if (i < tags.Length - 1)
+                                        {
+                                            @:,
+                                        }
+                                    }
+                                }
+                            </div>
+                        </div>
+                    }
+
+
+
+                    @*@if (result.Document.ContainsKey("imageCaption"))
+                    {
+                        <div class="row">
+                            <div class="col-md-3">
+                                <strong>画像分析 imageCaption</strong>
+                            </div>
+
+                            @foreach (var originaltext in result.Document["imageCaption"])
+                            {
+                                <div class="row">
+                                    <div class="col-md-9">
+                                        @Html.Raw(originaltext)
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    } *@
+
+                    <hr /> <!-- Add a horizontal rule to separate results -->
+                </div>
+            }
+        }
+        else
+        {
+            <p>AI Enrichment検索の結果は見つかりません。</p>
         }
     </div>
 

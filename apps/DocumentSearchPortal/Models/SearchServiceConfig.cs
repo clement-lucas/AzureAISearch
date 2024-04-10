@@ -14,6 +14,7 @@
         public string CombinedIndexer1Name { get; set; } = string.Empty;
         public string CombinedIndexer2Name { get; set; } = string.Empty;
         public string SecurityIndexName { get; set; } = string.Empty;
+        public string AIEnrichmentIndexName { get; set; } = string.Empty;
         public string AzureBlobStorageConnectionString { get; set; } = string.Empty;
         public string NormalContainerName { get; set; } = string.Empty;
         public string SQLContainerName { get; set; } = string.Empty;

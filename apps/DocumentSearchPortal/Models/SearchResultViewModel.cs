@@ -35,7 +35,17 @@ namespace DocumentSearchPortal.Models
 
         public SearchResults<SearchDocument>? SecuritySearchResults { get; set; }
 
-        public List<string> AvailableIndexes { get; set; } = new List<string> { "Normal", "Vector", "Hybrid", "Hybrid-CustomVector", "SQL+Normal", "Document Security" };
+        public SearchResults<SearchDocument>? AIEnrichmentSearchResults { get; set; }
+
+        public List<string> AvailableIndexes { get; set; } = new List<string> { 
+            "Normal", 
+            "Vector", 
+            "Hybrid", 
+            "Hybrid-CustomVector", 
+            "SQL+Normal", 
+            "Document Security",
+            "Normal + AI Enrichment (Image)"
+        };
 
         public List<string> SelectedIndexes { get; set; } = new List<string> { "Normal" };
 
