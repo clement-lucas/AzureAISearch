@@ -35,7 +35,19 @@ namespace DocumentSearchPortal.Models
 
         public SearchResults<SearchDocument>? SecuritySearchResults { get; set; }
 
-        public SearchResults<SearchDocument>? AIEnrichmentSearchResults { get; set; }
+        public SearchResults<SearchDocument>? AIEnrichImageSearchResults { get; set; }
+
+        public SearchResults<SearchDocument>? AIEnrichCustomEntityLookupSearchResults { get; set; }
+
+        public SearchResults<SearchDocument>? AIEnrichEntityLinkingSearchResults { get; set; }
+
+        public SearchResults<SearchDocument>? AIEnrichEntityRecognitionSearchResults { get; set; }
+
+        public SearchResults<SearchDocument>? AIEnrichKeyPhraseExtractionSearchResults { get; set; }
+
+        public SearchResults<SearchDocument>? AIEnrichLanguageDetectionSearchResults { get; set; }
+
+        public SearchResults<SearchDocument>? AIEnrichPIIDetectionSearchResults { get; set; }
 
         public List<string> AvailableIndexes { get; set; } = new List<string> { 
             "Normal", 
@@ -44,7 +56,14 @@ namespace DocumentSearchPortal.Models
             "Hybrid-CustomVector", 
             "SQL+Normal", 
             "Document Security",
-            "Normal + AI Enrichment (Image)"
+            "AI Enrichment - Image",
+            "AI Enrichment - Custom Entity Lookup",
+            "AI Enrichment - Entity Linking",
+            "AI Enrichment - Entity Recognition",
+            "AI Enrichment - Key Phrase Extraction",
+            "AI Enrichment - Language Detection",
+            "AI Enrichment - PII Detection"
+
         };
 
         public List<string> SelectedIndexes { get; set; } = new List<string> { "Normal" };

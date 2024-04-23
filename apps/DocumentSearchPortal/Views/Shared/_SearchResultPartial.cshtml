@@ -1,0 +1,118 @@
+﻿@using Azure.Search.Documents
+@using Azure.Search.Documents.Models
+@using DocumentSearchPortal.Helpers
+@model SearchResult<SearchDocument>
+
+<div class="row">
+    <div class="col-md-3">
+        <strong>Score</strong>
+    </div>
+    <div class="col-md-9">
+        @(Model.Score != null ? Model.Score : string.Empty)
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-3">
+        <strong>ファイル名</strong>
+    </div>
+    <div class="col-md-9">
+        @(Model.Document.ContainsKey("metadata_storage_name") ? Model.Document["metadata_storage_name"] : string.Empty)
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-3">
+        <strong>修正日</strong>
+    </div>
+    <div class="col-md-9">
+        @(Model.Document.ContainsKey("metadata_storage_last_modified") ? Model.Document["metadata_storage_last_modified"] : string.Empty)
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-3">
+        <strong>説明</strong>
+    </div>
+    <div class="col-md-9">
+        @(Model.Document.ContainsKey("Description") ? Model.Document["Description"] : string.Empty)
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-3">
+        <strong>カテゴリー</strong>
+    </div>
+    <div class="col-md-9">
+        @(Model.Document.ContainsKey("Category") ? Model.Document["Category"] : string.Empty)
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-3">
+        <strong>情報名</strong>
+    </div>
+    <div class="col-md-9">
+        @(Model.Document.ContainsKey("InformationId") ? Model.Document["InformationId"] : string.Empty)
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-3">
+        <strong>プロトコルID</strong>
+    </div>
+    <div class="col-md-9">
+        @(Model.Document.ContainsKey("ProtocolId") ? Model.Document["ProtocolId"] : string.Empty)
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-3">
+        <strong>公開範囲</strong>
+    </div>
+    <div class="col-md-9">
+        @(Model.Document.ContainsKey("DisclosureScope") ? Model.Document["DisclosureScope"] : string.Empty)
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-3">
+        <strong>修正者</strong>
+    </div>
+    <div class="col-md-9">
+        @(Model.Document.ContainsKey("ModifiedBy") ? Model.Document["ModifiedBy"] : string.Empty)
+    </div>
+</div>
+<!-- Highlighted search contents -->
+@if (Model?.Highlights?.Count > 0 && Model.Highlights.ContainsKey("content"))
+{
+    var countPrefixSuffix = ViewData["CountPrefixSuffix"] != null ? Convert.ToInt32(ViewData["CountPrefixSuffix"]) : 0;
+
+    foreach (var originalSentence in Model.Highlights["content"])
+    {
+        if (countPrefixSuffix > 0)
+        {
+            string adjustedSentence = HighlightTextHelper.ProcessText(originalSentence, countPrefixSuffix);
+
+            <div class="row">
+                <div class="col-md-3">
+                    <strong>コンテンツからのハイライト (トリミングあり)</strong>
+                </div>
+                <div class="col-md-9">
+                    @Html.Raw(adjustedSentence)
+                </div>
+            </div>
+
+        }
+
+        // Display the full highlight without trimming
+        <div class="row">
+            <div class="col-md-3">
+                <strong>コンテンツからのハイライト</strong>
+            </div>
+            <div class="col-md-9">
+                @Html.Raw(originalSentence.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))
+            </div>
+        </div>
+    }
+}
+else
+{
+    <div class="row">
+        <div class="col-md-12">
+            <p>コンテンツに利用可能なハイライトはありません。</p>
+        </div>
+    </div>
+}

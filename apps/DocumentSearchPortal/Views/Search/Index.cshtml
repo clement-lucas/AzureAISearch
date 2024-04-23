@@ -1,11 +1,14 @@
 ﻿@using System.Text.RegularExpressions
 @using System.Text
 @using DocumentSearchPortal.Helpers
+@using System.Text.Json
+
 
 @model DocumentSearchPortal.Models.SearchResultViewModel
 
 @{
     ViewData["Title"] = "ドキュメント検索";
+    ViewData["CountPrefixSuffix"] = Model.CountPrefixSuffix;
 }
 
 <h2>@ViewData["Title"]</h2>
@@ -101,120 +104,8 @@
             @foreach (var result in Model.NormalSearchResults.GetResults())
             {
                 <div class="container mt-4">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>Score</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Score != null ? result.Score : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>ファイル名</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("metadata_storage_name") ? result.Document["metadata_storage_name"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>修正日</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("metadata_storage_last_modified") ? result.Document["metadata_storage_last_modified"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>説明</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("Description") ? result.Document["Description"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>カテゴリー</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("Category") ? result.Document["Category"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>情報名</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("InformationId") ? result.Document["InformationId"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>プロトコルID</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("ProtocolId") ? result.Document["ProtocolId"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>公開範囲</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("DisclosureScope") ? result.Document["DisclosureScope"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>修正者</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("ModifiedBy") ? result.Document["ModifiedBy"] : string.Empty)
-                        </div>
-                    </div>
 
-                    <!-- Highlighted search contents -->
-                    @if (result?.Highlights?.Count > 0 && result.Highlights.ContainsKey("content"))
-                    {
-                        var countPrefixSuffix = Model.CountPrefixSuffix.HasValue ? Convert.ToInt32(Model.CountPrefixSuffix) : 0;
-
-                        foreach (var originalSentence in result.Highlights["content"])
-                        {
-                            if (countPrefixSuffix > 0)
-                            {
-                                string adjustedSentence = HighlightTextHelper.ProcessText(originalSentence, countPrefixSuffix);
-
-                                <div class="row">
-                                    <div class="col-md-3">
-                                        <strong>コンテンツからのハイライト (トリミングあり)</strong>
-                                    </div>
-                                    <div class="col-md-9">
-                                        @Html.Raw(adjustedSentence)
-                                    </div>
-                                </div>
-
-                            }
-
-                            // Display the full highlight without trimming
-                            <div class="row">
-                                <div class="col-md-3">
-                                    <strong>コンテンツからのハイライト</strong>
-                                </div>
-                                <div class="col-md-9">
-                                    @Html.Raw(originalSentence.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))
-                                </div>
-                            </div>
-                        }
-                    }
-                    else
-                    {
-                        <div class="row">
-                            <div class="col-md-12">
-                                <p>コンテンツに利用可能なハイライトはありません。</p>
-                            </div>
-                        </div>
-                    }
+                    @Html.Partial("_SearchResultPartial", result)
 
                     <hr /> <!-- Add a horizontal rule to separate results -->
                 </div>
@@ -234,78 +125,9 @@
             @foreach (var result in Model.VectorSearchResults.GetResults())
             {
                 <div class="container mt-4">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>Score</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Score != null ? result.Score : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>ファイル名</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("title") ? result.Document["title"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>修正日</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("metadata_storage_last_modified") ? result.Document["metadata_storage_last_modified"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>説明</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("Description") ? result.Document["Description"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>カテゴリー</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("Category") ? result.Document["Category"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>情報名</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("InformationId") ? result.Document["InformationId"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>プロトコルID</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("ProtocolId") ? result.Document["ProtocolId"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>公開範囲</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("DisclosureScope") ? result.Document["DisclosureScope"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>修正者</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("ModifiedBy") ? result.Document["ModifiedBy"] : string.Empty)
-                        </div>
-                    </div>
+
+                    @Html.Partial("_SearchResultPartial", result)
+
                     <div class="row">
                         <div class="col-md-3">
                             <strong>ベクトルチャンク</strong>
@@ -334,84 +156,15 @@
                 <div class="container mt-4">
                     <div class="row">
                         <div class="col-md-3">
-                            <strong>Score</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Score != null ? result.Score : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
                             <strong>Semantic Reranker Score</strong>
                         </div>
                         <div class="col-md-9">
                             @(result.SemanticSearch.RerankerScore != null ? result.SemanticSearch.RerankerScore : string.Empty)
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>ファイル名</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("title") ? result.Document["title"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>修正日</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("metadata_storage_last_modified") ? result.Document["metadata_storage_last_modified"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>説明</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("Description") ? result.Document["Description"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>カテゴリー</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("Category") ? result.Document["Category"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>情報名</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("InformationId") ? result.Document["InformationId"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>プロトコルID</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("ProtocolId") ? result.Document["ProtocolId"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>公開範囲</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("DisclosureScope") ? result.Document["DisclosureScope"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>修正者</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("ModifiedBy") ? result.Document["ModifiedBy"] : string.Empty)
-                        </div>
-                    </div>
+
+                    @Html.Partial("_SearchResultPartial", result)
+
                     <!-- Highlighted search contents -->
                     @if (result?.SemanticSearch?.Captions?.Any() == true)
                     {
@@ -495,84 +248,15 @@
                 <div class="container mt-4">
                     <div class="row">
                         <div class="col-md-3">
-                            <strong>Score</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Score != null ? result.Score : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
                             <strong>Semantic Reranker Score</strong>
                         </div>
                         <div class="col-md-9">
                             @(result.SemanticSearch.RerankerScore != null ? result.SemanticSearch.RerankerScore : string.Empty)
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>ファイル名</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("title") ? result.Document["title"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>修正日</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("metadata_storage_last_modified") ? result.Document["metadata_storage_last_modified"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>説明</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("Description") ? result.Document["Description"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>カテゴリー</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("Category") ? result.Document["Category"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>情報名</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("InformationId") ? result.Document["InformationId"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>プロトコルID</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("ProtocolId") ? result.Document["ProtocolId"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>公開範囲</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("DisclosureScope") ? result.Document["DisclosureScope"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>修正者</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("ModifiedBy") ? result.Document["ModifiedBy"] : string.Empty)
-                        </div>
-                    </div>
+
+                    @Html.Partial("_SearchResultPartial", result)
+
                     <!-- Highlighted search contents -->
                     @if (result?.SemanticSearch?.Captions?.Any() == true)
                     {
@@ -654,159 +338,8 @@
             @foreach (var result in Model.CombinedSearchResults.GetResults())
             {
                 <div class="container mt-4">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>Score</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Score != null ? result.Score : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>ファイル名</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("metadata_storage_name") ? result.Document["metadata_storage_name"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>修正日</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("metadata_storage_last_modified") ? result.Document["metadata_storage_last_modified"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>説明</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("Description") ? result.Document["Description"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>カテゴリー</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("CategoryName") ? result.Document["CategoryName"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>情報名</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("InformationName") ? result.Document["InformationName"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>プロトコルID</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("ProtocolName") ? result.Document["ProtocolName"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>公開範囲</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("DisclosureScopeName") ? result.Document["DisclosureScopeName"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>修正者</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("ModifiedByName") ? result.Document["ModifiedByName"] : string.Empty)
-                        </div>
-                    </div>
 
-                    <!-- Highlighted search contents -->
-                    @if (result?.Highlights?.Count > 0 && result.Highlights.ContainsKey("content"))
-                    {
-                        var countPrefixSuffix = Model.CountPrefixSuffix.HasValue ? Convert.ToInt32(Model.CountPrefixSuffix) : 0;
-
-                        foreach (var originalSentence in result.Highlights["content"])
-                        {
-                            if (countPrefixSuffix > 0)
-                            {
-                                // Pattern to match highlights
-                                string pattern = @"<em>.*?</em>";
-
-                                // Use a StringBuilder to build the result
-                                StringBuilder adjustedSentence = new StringBuilder();
-                                int lastPosition = 0;
-
-                                foreach (Match match in Regex.Matches(originalSentence, pattern))
-                                {
-                                    // Calculate prefix
-                                    int prefixStart = Math.Max(lastPosition, match.Index - countPrefixSuffix);
-                                    if (prefixStart > lastPosition)
-                                    {
-                                        // If not at the beginning, append "***"
-                                        //if (lastPosition != 0)
-                                        adjustedSentence.Append(" ***");
-                                        adjustedSentence.Append(originalSentence.Substring(prefixStart, match.Index - prefixStart));
-                                    }
-                                    else if (lastPosition == 0 && match.Index != 0)
-                                    {
-                                        // If at the beginning but not the very start, prepend "***"
-                                        adjustedSentence.Append("***");
-                                    }
-
-                                    // Append the highlight
-                                    adjustedSentence.Append(match.Value);
-
-                                    // Update lastPosition to the end of the current match
-                                    lastPosition = match.Index + match.Length;
-                                }
-
-                                // Calculate and append suffix if necessary
-                                if (lastPosition < originalSentence.Length)
-                                {
-                                    int suffixEnd = Math.Min(originalSentence.Length, lastPosition + countPrefixSuffix);
-                                    if (suffixEnd > lastPosition)
-                                    {
-                                        adjustedSentence.Append(originalSentence.Substring(lastPosition, suffixEnd - lastPosition));
-                                    }
-                                    // Append "***" if not at the end
-                                    if (suffixEnd < originalSentence.Length) adjustedSentence.Append("***");
-                                }
-
-                                <div class="row">
-                                    <div class="col-md-3">
-                                        <strong>コンテンツからのハイライト (トリミングあり)</strong>
-                                    </div>
-                                    <div class="col-md-9">
-                                        @Html.Raw(adjustedSentence.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))
-                                    </div>
-                                </div>
-                            }
-                            // Display the full highlight without trimming
-                            <div class="row">
-                                <div class="col-md-3">
-                                    <strong>コンテンツのハイライト</strong>
-                                </div>
-                                <div class="col-md-9">
-                                    @Html.Raw(originalSentence.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))
-                                </div>
-                            </div>
-                        }
-                    }
-                    else
-                    {
-                        <div class="row">
-                            <div class="col-md-12">
-                                <p>コンテンツに利用可能なハイライトはありません。</p>
-                            </div>
-                        </div>
-                    }
+                    @Html.Partial("_SearchResultPartial", result)
 
                     <hr /> <!-- Add a horizontal rule to separate results -->
                 </div>
@@ -818,7 +351,7 @@
         }
     </div>
     
-    <!-- Display Normal Search Results -->
+    <!-- Display Document Security Index Search Results -->
     <div class="row">
         <h3>Document Security Index検索結果</h3>
         @if (Model?.SecuritySearchResults?.TotalCount > 0)
@@ -826,78 +359,8 @@
             @foreach (var result in Model.SecuritySearchResults.GetResults())
             {
                 <div class="container mt-4">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>Score</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Score != null ? result.Score : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>ファイル名</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("metadata_storage_name") ? result.Document["metadata_storage_name"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>修正日</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("metadata_storage_last_modified") ? result.Document["metadata_storage_last_modified"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>説明</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("Description") ? result.Document["Description"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>カテゴリー</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("Category") ? result.Document["Category"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>情報名</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("InformationId") ? result.Document["InformationId"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>プロトコルID</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("ProtocolId") ? result.Document["ProtocolId"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>公開範囲</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("DisclosureScope") ? result.Document["DisclosureScope"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>修正者</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("ModifiedBy") ? result.Document["ModifiedBy"] : string.Empty)
-                        </div>
-                    </div>
+
+                    @Html.Partial("_SearchResultPartial", result)
 
                     <div class="row">
                         <div class="col-md-3">
@@ -918,50 +381,6 @@
                         </div>
                     </div>
 
-
-
-                    <!-- Highlighted search contents -->
-                    @if (result?.Highlights?.Count > 0 && result.Highlights.ContainsKey("content"))
-                    {
-                        var countPrefixSuffix = Model.CountPrefixSuffix.HasValue ? Convert.ToInt32(Model.CountPrefixSuffix) : 0;
-
-                        foreach (var originalSentence in result.Highlights["content"])
-                        {
-                            if (countPrefixSuffix > 0)
-                            {
-                                string adjustedSentence = HighlightTextHelper.ProcessText(originalSentence, countPrefixSuffix);
-
-                                <div class="row">
-                                    <div class="col-md-3">
-                                        <strong>コンテンツからのハイライト (トリミングあり)</strong>
-                                    </div>
-                                    <div class="col-md-9">
-                                        @Html.Raw(adjustedSentence)
-                                    </div>
-                                </div>
-
-                            }
-
-                            // Display the full highlight without trimming
-                            <div class="row">
-                                <div class="col-md-3">
-                                    <strong>コンテンツからのハイライト</strong>
-                                </div>
-                                <div class="col-md-9">
-                                    @Html.Raw(originalSentence.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))
-                                </div>
-                            </div>
-                        }
-                    }
-                    else
-                    {
-                        <div class="row">
-                            <div class="col-md-12">
-                                <p>コンテンツに利用可能なハイライトはありません。</p>
-                            </div>
-                        </div>
-                    }
-
                     <hr /> <!-- Add a horizontal rule to separate results -->
                 </div>
             }
@@ -972,86 +391,16 @@
         }
     </div>
 
-    <!-- Display Normal Search Results -->
+    <!-- Display AI Enrichment(画像) Search Results -->
     <div class="row">
         <h3>AI Enrichment(画像)検索結果</h3>
-        @if (Model?.AIEnrichmentSearchResults?.TotalCount > 0)
+        @if (Model?.AIEnrichImageSearchResults?.TotalCount > 0)
         {
-            @foreach (var result in Model.AIEnrichmentSearchResults.GetResults())
+            @foreach (var result in Model.AIEnrichImageSearchResults.GetResults())
             {
                 <div class="container mt-4">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>Score</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Score != null ? result.Score : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>ファイル名</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("metadata_storage_name") ? result.Document["metadata_storage_name"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>修正日</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("metadata_storage_last_modified") ? result.Document["metadata_storage_last_modified"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>説明</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("Description") ? result.Document["Description"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>カテゴリー</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("Category") ? result.Document["Category"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>情報名</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("InformationId") ? result.Document["InformationId"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>プロトコルID</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("ProtocolId") ? result.Document["ProtocolId"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>公開範囲</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("DisclosureScope") ? result.Document["DisclosureScope"] : string.Empty)
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>修正者</strong>
-                        </div>
-                        <div class="col-md-9">
-                            @(result.Document.ContainsKey("ModifiedBy") ? result.Document["ModifiedBy"] : string.Empty)
-                        </div>
-                    </div>
+
+                    @Html.Partial("_SearchResultPartial", result)
 
                     <!-- Highlighted search contents -->
                     @if (result?.Highlights?.Count > 0 && result.Highlights.ContainsKey("merged_content"))
@@ -1066,7 +415,7 @@
 
                                 <div class="row">
                                     <div class="col-md-3">
-                                        <strong>コンテンツからのハイライト (トリミングあり)</strong>
+                                        <strong>コンテンツ+画像からのハイライト (トリミングあり)</strong>
                                     </div>
                                     <div class="col-md-9">
                                         @Html.Raw(adjustedSentence)
@@ -1078,7 +427,7 @@
                             // Display the full highlight without trimming
                             <div class="row">
                                 <div class="col-md-3">
-                                    <strong>コンテンツからのハイライト</strong>
+                                    <strong>コンテンツ+画像からのハイライト</strong>
                                 </div>
                                 <div class="col-md-9">
                                     @Html.Raw(originalSentence.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))
@@ -1122,25 +471,6 @@
                         </div>
                     }
 
-
-                    @*@if (result.Document.ContainsKey("layoutText"))
-                    {
-                        <div class="row">
-                            <div class="col-md-3">
-                                <strong>OCR layoutText</strong>
-                            </div>
-
-                            @foreach (var originaltext in result.Document["layoutText"])
-                            {
-                                <div class="row">
-                                <div class="col-md-9">
-                                    @Html.Raw(originaltext)
-                                </div>
-                                </div>
-                            }
-                        </div>
-                    } *@
-
                     @if (result.Document.ContainsKey("imageTags") && result.Document["imageTags"] is object[] tags)
                     {
                         <div class="row">
@@ -1168,26 +498,6 @@
                         </div>
                     }
 
-
-
-                    @*@if (result.Document.ContainsKey("imageCaption"))
-                    {
-                        <div class="row">
-                            <div class="col-md-3">
-                                <strong>画像分析 imageCaption</strong>
-                            </div>
-
-                            @foreach (var originaltext in result.Document["imageCaption"])
-                            {
-                                <div class="row">
-                                    <div class="col-md-9">
-                                        @Html.Raw(originaltext)
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    } *@
-
                     <hr /> <!-- Add a horizontal rule to separate results -->
                 </div>
             }
@@ -1195,6 +505,472 @@
         else
         {
             <p>AI Enrichment検索の結果は見つかりません。</p>
+        }
+    </div>
+
+    <!-- Display AI Enrichment(Custom Entity Lookup) Search Results -->
+    <div class="row">
+        <h3>AI Enrichment(Custom Entity Lookup)検索結果</h3>
+        @if (Model?.AIEnrichCustomEntityLookupSearchResults?.TotalCount > 0)
+        {
+            @foreach (var result in Model.AIEnrichCustomEntityLookupSearchResults.GetResults())
+            {
+                <div class="container mt-4">
+
+                    @Html.Partial("_SearchResultPartial", result)
+
+                    @if (result.Document.ContainsKey("matchedEntities"))
+                    {
+                        // Assuming matchedEntities is an IEnumerable of IDictionary<string, object>
+                        var matchedEntitiesRaw = result.Document["matchedEntities"];
+                        if (matchedEntitiesRaw is IEnumerable<object> matchedEntities && matchedEntities.Count() > 0)
+                        {
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <strong>Matched Entities</strong>
+                                </div>
+                                <div class="col-md-9">
+                                    @foreach (var entityRaw in matchedEntities)
+                                    {
+                                        if (entityRaw is IDictionary<string, object> entity)
+                                        {
+                                            object nameObj;
+                                            object descriptionObj;
+
+                                            string name = string.Empty;
+                                            string description = string.Empty;
+
+                                            if (entity.TryGetValue("name", out nameObj))
+                                            {
+                                                name = nameObj as string;
+                                            }
+
+                                            if (entity.TryGetValue("description", out descriptionObj))
+                                            {
+                                                description = descriptionObj as string;
+                                            }
+
+                                            if (!string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(description))
+                                            {
+                                                <div>
+                                                    <strong>Name:</strong> @Html.Raw(name)
+                                                </div>
+                                                <div>
+                                                    <strong>Description:</strong> @Html.Raw(description)
+                                                </div>
+                                                <br />
+                                            }
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+
+                    <hr /> <!-- Add a horizontal rule to separate results -->
+                </div>
+            }
+        }
+        else
+        {
+            <p>AI Enrichment(Custom Entity Lookup)検索結果は見つかりません。</p>
+        }
+    </div>
+
+    <!-- Display AI Enrichment(Entity Linking) Search Results -->
+    <div class="row">
+        <h3>AI Enrichment(Entity Linking)検索結果</h3>
+        @if (Model?.AIEnrichEntityLinkingSearchResults?.TotalCount > 0)
+        {
+            @foreach (var result in Model.AIEnrichEntityLinkingSearchResults.GetResults())
+            {
+                <div class="container mt-4">
+
+                    @Html.Partial("_SearchResultPartial", result) 
+
+                    @if (result.Document.ContainsKey("linkedEntities"))
+                    {
+                        // Assuming linkedEntities is an IEnumerable of IDictionary<string, object>
+                        var linkedEntitiesRaw = result.Document["linkedEntities"];
+                        if (linkedEntitiesRaw is IEnumerable<object> linkedEntities && linkedEntities.Count() > 0)
+                        {
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <strong>Linked Entities</strong>
+                                </div>
+                                <div class="col-md-9">
+                                    @foreach (var entityRaw in linkedEntities)
+                                    {
+                                        if (entityRaw is IDictionary<string, object> entity)
+                                        {
+                                            object nameObj;
+                                            object urlObj;
+
+                                            string name = string.Empty;
+                                            string url = string.Empty;
+
+                                            if (entity.TryGetValue("name", out nameObj))
+                                            {
+                                                name = nameObj as string;
+                                            }
+
+                                            if (entity.TryGetValue("url", out urlObj))
+                                            {
+                                                url = urlObj as string;
+                                            }
+
+                                            if (!string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(url))
+                                            {
+                                                <div>
+                                                    <strong>Name:</strong> @Html.Raw(name)
+                                                </div>
+                                                <div>
+                                                    <strong>URL:</strong> <a href="@Html.Raw(url)" target="_blank">@Html.Raw(url)</a>
+                                                </div>
+                                                <br />
+                                            }
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+
+
+                    <hr /> <!-- Add a horizontal rule to separate results -->
+                </div>
+            }
+        }
+        else
+        {
+            <p>AI Enrichment(Entity Linking)検索結果は見つかりません。</p>
+        }
+    </div>
+
+    <!-- Display AI Enrichment(Entity Recognition) Search Results -->
+    <div class="row">
+        <h3>AI Enrichment(Entity Recognition)検索結果</h3>
+        @if (Model?.AIEnrichEntityRecognitionSearchResults?.TotalCount > 0)
+        {
+            @foreach (var result in Model.AIEnrichEntityRecognitionSearchResults.GetResults())
+            {
+                <div class="container mt-4">
+
+                    @Html.Partial("_SearchResultPartial", result)
+
+                    @{
+                        string[] keysToProcess = new string[] 
+                        { 
+                            "persons", 
+                            "locations", 
+                            "organizations", 
+                            "quantities", 
+                            "dateTimes", 
+                            "urls",
+                            "emails",
+                            "personTypes",
+                            "events",
+                            "products",
+                            "skills",
+                            "addresses",
+                            "phoneNumbers",
+                            "ipAddresses"
+                        };
+                    }
+
+                    @foreach (var key in keysToProcess)
+                    {
+                        if (result.Document.ContainsKey(key) && result.Document[key] is object[] objList)
+                        {
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <strong>@key</strong> <!-- Dynamically display the key -->
+                                </div>
+                                <div class="col-md-9">
+                                    @for (int i = 0; i < objList.Length; i++)
+                                    {
+                                        var objText = objList[i] as string; // Safely cast to string.
+                                        if (objText != null)
+                                        {
+                                            <text>[</text>
+
+                                            @Html.Raw(objText)
+
+                                            <text>]</text>
+                                            if (i < objList.Length - 1)
+                                            {
+                                                @:,
+                                            }
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+
+
+                    @if (result.Document.ContainsKey("namedEntities") && result.Document["namedEntities"] is object[] recognizedEntities)
+                    {
+                        <div class="row">
+                            <div class="col-md-3">
+                                <strong>Recognized Entities</strong>
+                            </div>
+                            <div class="col-md-9">
+                                <ul>
+                                    @foreach (var entityObject in recognizedEntities)
+                                    {
+                                        // Cast each entity to a SearchDocument
+                                        if (entityObject is Azure.Search.Documents.Models.SearchDocument entity)
+                                        {
+                                            <li>
+                                                Category: @entity.GetString("category"),
+                                                SubCategory: @(entity.GetString("subcategory") ?? "N/A"),
+                                                Confidence Score: @entity.GetDouble("confidenceScore"),
+                                                Length Score: @entity.GetInt32("length"),
+                                                Offset: @entity.GetInt32("offset"),
+                                                Text: @entity.GetString("text")
+                                            </li>
+                                        }
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+                    }
+
+                    <hr /> <!-- Add a horizontal rule to separate results -->
+                </div>
+            }
+        }
+        else
+        {
+            <p>AI Enrichment(Entity Recognition)検索結果は見つかりません。</p>
+        }
+    </div>
+
+    <!-- Display AI Enrichment(Key Phrase Extraction) Search Results -->
+    <div class="row">
+        <h3>AI Enrichment(Key Phrase Extraction)検索結果</h3>
+        @if (Model?.AIEnrichKeyPhraseExtractionSearchResults?.TotalCount > 0)
+        {
+            @foreach (var result in Model.AIEnrichKeyPhraseExtractionSearchResults.GetResults())
+            {
+                <div class="container mt-4">
+
+                    @Html.Partial("_SearchResultPartial", result)
+
+                    @if (result.Document.ContainsKey("keyPhrases") && result.Document["keyPhrases"] is object[] objList)
+                    {
+                        <div class="row">
+                            <div class="col-md-3">
+                                <strong>keyPhrases</strong> <!-- Dynamically display the key -->
+                            </div>
+                            <div class="col-md-9">
+                                @for (int i = 0; i < objList.Length; i++)
+                                {
+                                    var objText = objList[i] as string; // Safely cast to string.
+                                    if (objText != null)
+                                    {
+                                        <text>[</text>
+
+                                        @Html.Raw(objText)
+
+                                        <text>]</text>
+                                        if (i < objList.Length - 1)
+                                        {
+                                            @:,
+                                        }
+                                    }
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    @if (result.Document.ContainsKey("namedEntities") && result.Document["namedEntities"] is object[] recognizedEntities)
+                    {
+                        <div class="row">
+                            <div class="col-md-3">
+                                <strong>Recognized Entities</strong>
+                            </div>
+                            <div class="col-md-9">
+                                <ul>
+                                    @foreach (var entityObject in recognizedEntities)
+                                    {
+                                        // Cast each entity to a SearchDocument
+                                        if (entityObject is Azure.Search.Documents.Models.SearchDocument entity)
+                                        {
+                                            <li>
+                                                Category: @entity.GetString("category"),
+                                                SubCategory: @(entity.GetString("subcategory") ?? "N/A"),
+                                                Confidence Score: @entity.GetDouble("confidenceScore"),
+                                                Length: @entity.GetInt32("length"),
+                                                Offset: @entity.GetInt32("offset"),
+                                                Text: @entity.GetString("text")
+                                            </li>
+                                        }
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+                    }
+
+                    <hr /> <!-- Add a horizontal rule to separate results -->
+                </div>
+            }
+        }
+        else
+        {
+            <p>AI Enrichment(Key Phrase Extraction)検索結果は見つかりません。</p>
+        }
+    </div>
+
+    <!-- Display AI Enrichment(Language Detection) Search Results -->
+    <div class="row">
+        <h3>AI Enrichment(Language Detection)検索結果</h3>
+        @if (Model?.AIEnrichLanguageDetectionSearchResults?.TotalCount > 0)
+        {
+            @foreach (var result in Model.AIEnrichLanguageDetectionSearchResults.GetResults())
+            {
+                <div class="container mt-4">
+
+                    @Html.Partial("_SearchResultPartial", result)
+
+                    @if (result.Document.ContainsKey("languageName") && result.Document["languageName"] is string languageJson)
+                    {
+                        try
+                        {
+                            var languageNames = JsonSerializer.Deserialize<List<string>>(languageJson);
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <strong>言語</strong>
+                                </div>
+                                <div class="col-md-9">
+                                    @string.Join(", ", languageNames)
+                                </div>
+                            </div>
+                        }
+                        catch (JsonException)
+                        {
+                            <div>Error parsing language names.</div>
+                        }
+                    }
+
+                    <hr /> <!-- Add a horizontal rule to separate results -->
+                </div>
+            }
+        }
+        else
+        {
+            <p>AI Enrichment(Language Detection)検索結果は見つかりません。</p>
+        }
+    </div>
+
+    <!-- Display AI Enrichment(PII Detection) Search Results -->
+    <div class="row">
+        <h3>AI Enrichment(PII Detection)検索結果</h3>
+        @if (Model?.AIEnrichPIIDetectionSearchResults?.TotalCount > 0)
+        {
+            @foreach (var result in Model.AIEnrichPIIDetectionSearchResults.GetResults())
+            {
+                <div class="container mt-4">
+
+                    @Html.Partial("_SearchResultPartial", result)
+
+@*                     @if (result.Document.ContainsKey("maskedText") && result.Document["maskedText"] is object[] objList)
+                    {
+                        <div class="row">
+                            <div class="col-md-3">
+                                <strong>Masked Text</strong>
+                            </div>
+                            <div class="col-md-9">
+                                @for (int i = 0; i < objList.Length; i++)
+                                {
+                                    var objText = objList[i] as string; // Safely cast to string.
+                                    if (objText != null)
+                                    {
+                                        <text>[</text>
+
+                                        @Html.Raw(objText)
+
+                                        <text>]</text>
+                                        if (i < objList.Length - 1)
+                                        {
+                                            @:,
+                                        }
+                                    }
+                                }
+                            </div>
+                        </div>
+                    } *@
+
+                    @if (result.Document.ContainsKey("maskedText"))
+                    {
+                        var jsonString = result.Document["maskedText"].ToString();
+                        var objList = JsonDocument.Parse(jsonString).RootElement.EnumerateArray().Select(element => element.GetString()).ToArray();
+
+                        if (objList != null && objList.Length > 0)
+                        {
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <strong>Masked Text</strong> <!-- Dynamically display the key -->
+                                </div>
+                                <div class="col-md-9">
+                                    @for (int i = 0; i < objList.Length; i++)
+                                    {
+                                        var objText = objList[i]; // Already a string, no need to cast.
+                                        if (objText != null)
+                                        {
+                                            <text>[</text>
+
+                                            @Html.Raw(objText)
+
+                                            <text>]</text>
+                                            if (i < objList.Length - 1)
+                                            {
+                                                @:,
+                                            }
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+
+
+                    @if (result.Document.ContainsKey("piiEntities") && result.Document["piiEntities"] is object[] recognizedEntities)
+                    {
+                        <div class="row">
+                            <div class="col-md-3">
+                                <strong>PII Entities</strong>
+                            </div>
+                            <div class="col-md-9">
+                                <ul>
+                                    @foreach (var entityObject in recognizedEntities)
+                                    {
+                                        // Cast each entity to a SearchDocument
+                                        if (entityObject is Azure.Search.Documents.Models.SearchDocument entity)
+                                        {
+                                            <li>
+                                                Text: @entity.GetString("text"),
+                                                Type: @entity.GetString("type"),
+                                                Sub Type: @(entity.GetString("subtype") ?? "N/A"),
+                                                Score: @entity.GetDouble("score"),
+                                                Length: @entity.GetInt32("length"),
+                                                Offset: @entity.GetInt32("offset")                                                
+                                            </li>
+                                        }
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+                    }
+
+                    <hr /> <!-- Add a horizontal rule to separate results -->
+                </div>
+            }
+        }
+        else
+        {
+            <p>AI Enrichment(Language Detection)検索結果は見つかりません。</p>
         }
     </div>
 

@@ -45,7 +45,7 @@ namespace DocumentSearchPortal.Services.Upload
             _context = context;
 
             // Assuming Managed Identity is configured correctly in the Azure service.
-            _combinedSearchClient = new SearchClient(new Uri($"https://{options.Value.ServiceName}.search.windows.net/"), options.Value.CombinedIndexName, new DefaultAzureCredential());
+            _combinedSearchClient = new SearchClient(new Uri($"https://{options.Value.ServiceName}.search.windows.net/"), options.Value.IndexNameCombined, new DefaultAzureCredential());
             _indexerClient = new SearchIndexerClient(new Uri($"https://{options.Value.ServiceName}.search.windows.net/"), new DefaultAzureCredential());
         }
 

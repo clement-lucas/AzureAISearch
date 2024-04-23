@@ -19,7 +19,13 @@ namespace DocumentSearchPortal.Services.Search
         private readonly SearchClient _hybridCustomVectorSearchClient;
         private readonly SearchClient _combinedSearchClient;
         private readonly SearchClient _securitySearchClient;
-        private readonly SearchClient _aiEnrichmentSearchClient;
+        private readonly SearchClient _aiEnrichImageSearchClient;
+        private readonly SearchClient _aiEnrichCustomEntityLookupSearchClient;
+        private readonly SearchClient _aiEnrichEntityLinkingSearchClient;
+        private readonly SearchClient _aiEnrichEntityRecognitionSearchClient;
+        private readonly SearchClient _aiEnrichKeyPhraseExtractionSearchClient;
+        private readonly SearchClient _aiEnrichLanguageDetectionSearchClient;
+        private readonly SearchClient _aiEnrichPIIDetectionSearchClient;
         private readonly SearchServiceConfig _config;
 
         /// <summary>
@@ -31,14 +37,57 @@ namespace DocumentSearchPortal.Services.Search
             _config = options.Value;
 
             // Assuming Managed Identity is configured correctly in the Azure service.
-            _keywordSearchClient = new SearchClient(new Uri($"https://{_config.ServiceName}.search.windows.net/"), _config.KeywordIndexName, new DefaultAzureCredential());
-            _vectorSearchClient = new SearchClient(new Uri($"https://{_config.ServiceName}.search.windows.net/"), _config.VectorIndexName, new DefaultAzureCredential());
-            _hybridSearchClient = new SearchClient(new Uri($"https://{_config.ServiceName}.search.windows.net/"), _config.HybridIndexName, new DefaultAzureCredential());
-            _combinedSearchClient = new SearchClient(new Uri($"https://{options.Value.ServiceName}.search.windows.net/"), _config.CombinedIndexName, new DefaultAzureCredential());
-            _securitySearchClient = new SearchClient(new Uri($"https://{options.Value.ServiceName}.search.windows.net/"), _config.SecurityIndexName, new DefaultAzureCredential());
-            _hybridCustomVectorSearchClient = new SearchClient(new Uri($"https://{options.Value.ServiceName}.search.windows.net/"), _config.HybridVectorAzFuncIndexName, new DefaultAzureCredential());
-            _aiEnrichmentSearchClient = new SearchClient(new Uri($"https://{_config.ServiceName}.search.windows.net/"), _config.AIEnrichmentIndexName, new DefaultAzureCredential());
+            _keywordSearchClient = new SearchClient(new Uri($"https://{_config.ServiceName}.search.windows.net/"),
+                _config.IndexNameKeyword,
+                new DefaultAzureCredential());
 
+            _vectorSearchClient = new SearchClient(new Uri($"https://{_config.ServiceName}.search.windows.net/"),
+                _config.IndexNameVector,
+                new DefaultAzureCredential());
+
+            _hybridSearchClient = new SearchClient(new Uri($"https://{_config.ServiceName}.search.windows.net/"),
+                _config.IndexNameVectorSemantic,
+                new DefaultAzureCredential());
+
+            _combinedSearchClient = new SearchClient(new Uri($"https://{options.Value.ServiceName}.search.windows.net/"),
+                _config.IndexNameCombined,
+                new DefaultAzureCredential());
+
+            _securitySearchClient = new SearchClient(new Uri($"https://{options.Value.ServiceName}.search.windows.net/"),
+                _config.IndexNameSecurity,
+                new DefaultAzureCredential());
+
+            _hybridCustomVectorSearchClient = new SearchClient(new Uri($"https://{options.Value.ServiceName}.search.windows.net/"),
+                _config.IndexNameHybridVectorAzFunc,
+                new DefaultAzureCredential());
+
+            _aiEnrichImageSearchClient = new SearchClient(new Uri($"https://{_config.ServiceName}.search.windows.net/"),
+                _config.IndexNameAIEnrichImage,
+                new DefaultAzureCredential());
+
+            _aiEnrichCustomEntityLookupSearchClient = new SearchClient(new Uri($"https://{_config.ServiceName}.search.windows.net/"),
+                _config.IndexNameAIEnrichCustomEntityLookup,
+                new DefaultAzureCredential());
+
+            _aiEnrichEntityLinkingSearchClient = new SearchClient(new Uri($"https://{_config.ServiceName}.search.windows.net/"),
+                _config.IndexNameAIEnrichEntityLinking,
+                new DefaultAzureCredential());
+
+            _aiEnrichEntityRecognitionSearchClient = new SearchClient(new Uri($"https://{_config.ServiceName}.search.windows.net/"),
+                _config.IndexNameAIEnrichEntityRecognition,
+                new DefaultAzureCredential());
+
+            _aiEnrichKeyPhraseExtractionSearchClient = new SearchClient(new Uri($"https://{_config.ServiceName}.search.windows.net/"),
+                _config.IndexNameAIEnrichKeyPhraseExtraction,
+                new DefaultAzureCredential());
+
+            _aiEnrichLanguageDetectionSearchClient = new SearchClient(new Uri($"https://{_config.ServiceName}.search.windows.net/"),
+                _config.IndexNameAIEnrichLanguageDetection,
+                new DefaultAzureCredential());
+
+            _aiEnrichPIIDetectionSearchClient = new SearchClient(new Uri($"https://{_config.ServiceName}.search.windows.net/"),
+                _config.IndexNameAIEnrichPIIDetection,
+                new DefaultAzureCredential());
         }
 
         /// <summary>
@@ -83,9 +132,39 @@ namespace DocumentSearchPortal.Services.Search
                 model.SecuritySearchResults = await SecuritySearchAsync(model);
             }
 
-            if (model.SelectedIndexes.Contains("Normal + AI Enrichment (Image)"))
+            if (model.SelectedIndexes.Contains("AI Enrichment - Image"))
             {
-                model.AIEnrichmentSearchResults = await AIEnrichmentSearchAsync(model);
+                model.AIEnrichImageSearchResults = await AIEnrichImageSearchAsync(model);
+            }
+
+            if (model.SelectedIndexes.Contains("AI Enrichment - Custom Entity Lookup"))
+            {
+                model.AIEnrichCustomEntityLookupSearchResults = await AIEnrichCustomEntityLookupSearchAsync(model);
+            }
+
+            if (model.SelectedIndexes.Contains("AI Enrichment - Entity Linking"))
+            {
+                model.AIEnrichEntityLinkingSearchResults = await AIEnrichEntityLinkingSearchAsync(model);
+            }
+
+            if (model.SelectedIndexes.Contains("AI Enrichment - Entity Recognition"))
+            {
+                model.AIEnrichEntityRecognitionSearchResults = await AIEnrichEntityRecognitionSearchAsync(model);
+            }
+
+            if (model.SelectedIndexes.Contains("AI Enrichment - Key Phrase Extraction"))
+            {
+                model.AIEnrichKeyPhraseExtractionSearchResults = await AIEnrichKeyPhraseExtractionSearchAsync(model);
+            }
+
+            if (model.SelectedIndexes.Contains("AI Enrichment - Language Detection"))
+            {
+                model.AIEnrichLanguageDetectionSearchResults = await AIEnrichLanguageDetectionSearchAsync(model);
+            }
+
+            if (model.SelectedIndexes.Contains("AI Enrichment - PII Detection"))
+            {
+                model.AIEnrichPIIDetectionSearchResults = await AIEnrichPIIDetectionSearchAsync(model);
             }
 
             return model;
@@ -346,7 +425,7 @@ namespace DocumentSearchPortal.Services.Search
             return await _securitySearchClient.SearchAsync<SearchDocument>(model.SearchQuery, options);
         }
 
-        public async Task<SearchResults<SearchDocument>> AIEnrichmentSearchAsync(SearchResultViewModel model)
+        public async Task<SearchResults<SearchDocument>> AIEnrichImageSearchAsync(SearchResultViewModel model)
         {
             SearchOptions options = SetupCommonSearchOptions(model);
             options.Select.Add("content");
@@ -366,7 +445,138 @@ namespace DocumentSearchPortal.Services.Search
                 options.HighlightFields.Add("merged_content");
             }
 
-            return await _aiEnrichmentSearchClient.SearchAsync<SearchDocument>(model.SearchQuery, options);
+            return await _aiEnrichImageSearchClient.SearchAsync<SearchDocument>(model.SearchQuery, options);
+        }
+
+        public async Task<SearchResults<SearchDocument>> AIEnrichCustomEntityLookupSearchAsync(SearchResultViewModel model)
+        {
+            SearchOptions options = SetupCommonSearchOptions(model);
+            options.Select.Add("content");
+            options.Select.Add("metadata_storage_name");
+            options.Select.Add("matchedEntities");            
+
+            if (model.CountHighlightResult.HasValue && model.CountHighlightResult > 0)
+            {
+                options.HighlightFields.Add($"content-{model.CountHighlightResult}");
+            }
+            else
+            {
+                options.HighlightFields.Add("content");
+            }
+
+            return await _aiEnrichCustomEntityLookupSearchClient.SearchAsync<SearchDocument>(model.SearchQuery, options);
+        }
+
+        public async Task<SearchResults<SearchDocument>> AIEnrichEntityLinkingSearchAsync(SearchResultViewModel model)
+        {
+            SearchOptions options = SetupCommonSearchOptions(model);
+            options.Select.Add("content");
+            options.Select.Add("metadata_storage_name");
+            options.Select.Add("linkedEntities");
+
+            if (model.CountHighlightResult.HasValue && model.CountHighlightResult > 0)
+            {
+                options.HighlightFields.Add($"content-{model.CountHighlightResult}");
+            }
+            else
+            {
+                options.HighlightFields.Add("content");
+            }
+
+            return await _aiEnrichEntityLinkingSearchClient.SearchAsync<SearchDocument>(model.SearchQuery, options);
+        }
+
+        public async Task<SearchResults<SearchDocument>> AIEnrichEntityRecognitionSearchAsync(SearchResultViewModel model)
+        {
+            SearchOptions options = SetupCommonSearchOptions(model);
+            options.Select.Add("content");
+            options.Select.Add("metadata_storage_name");
+            options.Select.Add("persons");
+            options.Select.Add("locations");
+            options.Select.Add("organizations");
+            options.Select.Add("quantities");
+            options.Select.Add("dateTimes");
+            options.Select.Add("urls");
+            options.Select.Add("emails");
+            options.Select.Add("personTypes");
+            options.Select.Add("events");
+            options.Select.Add("products");
+            options.Select.Add("skills");
+            options.Select.Add("addresses");
+            options.Select.Add("phoneNumbers");
+            options.Select.Add("ipAddresses");
+            options.Select.Add("namedEntities");
+
+            if (model.CountHighlightResult.HasValue && model.CountHighlightResult > 0)
+            {
+                options.HighlightFields.Add($"content-{model.CountHighlightResult}");
+            }
+            else
+            {
+                options.HighlightFields.Add("content");
+            }
+
+            return await _aiEnrichEntityRecognitionSearchClient.SearchAsync<SearchDocument>(model.SearchQuery, options);
+        }
+
+        public async Task<SearchResults<SearchDocument>> AIEnrichKeyPhraseExtractionSearchAsync(SearchResultViewModel model)
+        {
+            SearchOptions options = SetupCommonSearchOptions(model);
+            options.Select.Add("content");
+            options.Select.Add("metadata_storage_name");
+            options.Select.Add("keyPhrases");
+
+            if (model.CountHighlightResult.HasValue && model.CountHighlightResult > 0)
+            {
+                options.HighlightFields.Add($"content-{model.CountHighlightResult}");
+            }
+            else
+            {
+                options.HighlightFields.Add("content");
+            }
+
+            return await _aiEnrichKeyPhraseExtractionSearchClient.SearchAsync<SearchDocument>(model.SearchQuery, options);
+        }
+
+        public async Task<SearchResults<SearchDocument>> AIEnrichLanguageDetectionSearchAsync(SearchResultViewModel model)
+        {
+            SearchOptions options = SetupCommonSearchOptions(model);
+            options.Select.Add("content");
+            options.Select.Add("metadata_storage_name");
+            options.Select.Add("languageCode");
+            options.Select.Add("languageName");
+            options.Select.Add("languageScore");
+
+            if (model.CountHighlightResult.HasValue && model.CountHighlightResult > 0)
+            {
+                options.HighlightFields.Add($"content-{model.CountHighlightResult}");
+            }
+            else
+            {
+                options.HighlightFields.Add("content");
+            }
+
+            return await _aiEnrichLanguageDetectionSearchClient.SearchAsync<SearchDocument>(model.SearchQuery, options);
+        }
+
+        public async Task<SearchResults<SearchDocument>> AIEnrichPIIDetectionSearchAsync(SearchResultViewModel model)
+        {
+            SearchOptions options = SetupCommonSearchOptions(model);
+            options.Select.Add("content");
+            options.Select.Add("metadata_storage_name");
+            options.Select.Add("piiEntities");
+            options.Select.Add("maskedText");
+
+            if (model.CountHighlightResult.HasValue && model.CountHighlightResult > 0)
+            {
+                options.HighlightFields.Add($"content-{model.CountHighlightResult}");
+            }
+            else
+            {
+                options.HighlightFields.Add("content");
+            }
+
+            return await _aiEnrichPIIDetectionSearchClient.SearchAsync<SearchDocument>(model.SearchQuery, options);
         }
     }
 }
