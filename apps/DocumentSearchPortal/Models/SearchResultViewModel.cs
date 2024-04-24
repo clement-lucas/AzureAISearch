@@ -25,6 +25,8 @@ namespace DocumentSearchPortal.Models
 
         public SearchResults<SearchDocument>? NormalSearchResults { get; set; }
 
+        public SearchResults<SearchDocument>? PluralSearchResults { get; set; }
+
         public SearchResults<SearchDocument>? VectorSearchResults { get; set; }
 
         public SearchResults<SearchDocument>? HybridAdaSearchResults { get; set; }
@@ -50,7 +52,8 @@ namespace DocumentSearchPortal.Models
         public SearchResults<SearchDocument>? AIEnrichPIIDetectionSearchResults { get; set; }
 
         public List<string> AvailableIndexes { get; set; } = new List<string> { 
-            "Normal", 
+            "Normal",
+            "Plural",
             "Vector", 
             "Hybrid", 
             "Hybrid-CustomVector", 

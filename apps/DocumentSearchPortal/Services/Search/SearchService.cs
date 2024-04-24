@@ -1,5 +1,4 @@
-﻿using Azure;
-using Azure.Identity;
+﻿using Azure.Identity;
 using Azure.Search.Documents;
 using Azure.Search.Documents.Models;
 using DocumentSearchPortal.Models;
@@ -13,81 +12,17 @@ namespace DocumentSearchPortal.Services.Search
     /// </summary>
     public class SearchService : ISearchService
     {
-        private readonly SearchClient _keywordSearchClient;
-        private readonly SearchClient _vectorSearchClient;
-        private readonly SearchClient _hybridSearchClient;
-        private readonly SearchClient _hybridCustomVectorSearchClient;
-        private readonly SearchClient _combinedSearchClient;
-        private readonly SearchClient _securitySearchClient;
-        private readonly SearchClient _aiEnrichImageSearchClient;
-        private readonly SearchClient _aiEnrichCustomEntityLookupSearchClient;
-        private readonly SearchClient _aiEnrichEntityLinkingSearchClient;
-        private readonly SearchClient _aiEnrichEntityRecognitionSearchClient;
-        private readonly SearchClient _aiEnrichKeyPhraseExtractionSearchClient;
-        private readonly SearchClient _aiEnrichLanguageDetectionSearchClient;
-        private readonly SearchClient _aiEnrichPIIDetectionSearchClient;
+        private readonly ISearchClientWrapper _searchClientWrapper;
         private readonly SearchServiceConfig _config;
 
         /// <summary>
         /// SearchService
         /// </summary>
         /// <param name="options"></param>
-        public SearchService(IOptions<SearchServiceConfig> options)
+        public SearchService(IOptions<SearchServiceConfig> options, ISearchClientWrapper searchClientWrapper)
         {
             _config = options.Value;
-
-            // Assuming Managed Identity is configured correctly in the Azure service.
-            _keywordSearchClient = new SearchClient(new Uri($"https://{_config.ServiceName}.search.windows.net/"),
-                _config.IndexNameKeyword,
-                new DefaultAzureCredential());
-
-            _vectorSearchClient = new SearchClient(new Uri($"https://{_config.ServiceName}.search.windows.net/"),
-                _config.IndexNameVector,
-                new DefaultAzureCredential());
-
-            _hybridSearchClient = new SearchClient(new Uri($"https://{_config.ServiceName}.search.windows.net/"),
-                _config.IndexNameVectorSemantic,
-                new DefaultAzureCredential());
-
-            _combinedSearchClient = new SearchClient(new Uri($"https://{options.Value.ServiceName}.search.windows.net/"),
-                _config.IndexNameCombined,
-                new DefaultAzureCredential());
-
-            _securitySearchClient = new SearchClient(new Uri($"https://{options.Value.ServiceName}.search.windows.net/"),
-                _config.IndexNameSecurity,
-                new DefaultAzureCredential());
-
-            _hybridCustomVectorSearchClient = new SearchClient(new Uri($"https://{options.Value.ServiceName}.search.windows.net/"),
-                _config.IndexNameHybridVectorAzFunc,
-                new DefaultAzureCredential());
-
-            _aiEnrichImageSearchClient = new SearchClient(new Uri($"https://{_config.ServiceName}.search.windows.net/"),
-                _config.IndexNameAIEnrichImage,
-                new DefaultAzureCredential());
-
-            _aiEnrichCustomEntityLookupSearchClient = new SearchClient(new Uri($"https://{_config.ServiceName}.search.windows.net/"),
-                _config.IndexNameAIEnrichCustomEntityLookup,
-                new DefaultAzureCredential());
-
-            _aiEnrichEntityLinkingSearchClient = new SearchClient(new Uri($"https://{_config.ServiceName}.search.windows.net/"),
-                _config.IndexNameAIEnrichEntityLinking,
-                new DefaultAzureCredential());
-
-            _aiEnrichEntityRecognitionSearchClient = new SearchClient(new Uri($"https://{_config.ServiceName}.search.windows.net/"),
-                _config.IndexNameAIEnrichEntityRecognition,
-                new DefaultAzureCredential());
-
-            _aiEnrichKeyPhraseExtractionSearchClient = new SearchClient(new Uri($"https://{_config.ServiceName}.search.windows.net/"),
-                _config.IndexNameAIEnrichKeyPhraseExtraction,
-                new DefaultAzureCredential());
-
-            _aiEnrichLanguageDetectionSearchClient = new SearchClient(new Uri($"https://{_config.ServiceName}.search.windows.net/"),
-                _config.IndexNameAIEnrichLanguageDetection,
-                new DefaultAzureCredential());
-
-            _aiEnrichPIIDetectionSearchClient = new SearchClient(new Uri($"https://{_config.ServiceName}.search.windows.net/"),
-                _config.IndexNameAIEnrichPIIDetection,
-                new DefaultAzureCredential());
+            _searchClientWrapper = searchClientWrapper;
         }
 
         /// <summary>
@@ -105,6 +40,11 @@ namespace DocumentSearchPortal.Services.Search
             if (model.SelectedIndexes.Contains("Normal"))
             {
                 model.NormalSearchResults = await KeywordSearchAsync(model);
+            }
+
+            if (model.SelectedIndexes.Contains("Plural"))
+            {
+                model.PluralSearchResults = await PluralSearchAsync(model);
             }
 
             if (model.SelectedIndexes.Contains("Vector"))
@@ -240,7 +180,25 @@ namespace DocumentSearchPortal.Services.Search
                 options.HighlightFields.Add("content");
             }
 
-            return await _keywordSearchClient.SearchAsync<SearchDocument>(model.SearchQuery, options);
+            return await _searchClientWrapper.SearchAsync(model.SearchQuery, options, _config.IndexNameKeyword);
+        }
+
+        public async Task<SearchResults<SearchDocument>> PluralSearchAsync(SearchResultViewModel model)
+        {
+            SearchOptions options = SetupCommonSearchOptions(model);
+            options.Select.Add("content");
+            options.Select.Add("metadata_storage_name");
+
+            if (model.CountHighlightResult.HasValue && model.CountHighlightResult > 0)
+            {
+                options.HighlightFields.Add($"content-{model.CountHighlightResult}");
+            }
+            else
+            {
+                options.HighlightFields.Add("content");
+            }
+
+            return await _searchClientWrapper.SearchAsync(model.SearchQuery, options, _config.IndexNamePlural);
         }
 
         /// <summary>
@@ -266,7 +224,7 @@ namespace DocumentSearchPortal.Services.Search
                     },
             };
 
-            return await _vectorSearchClient.SearchAsync<SearchDocument>(options);
+            return await _searchClientWrapper.SearchAsync(model.SearchQuery, options, _config.IndexNameVector);
         }
 
         /// <summary>
@@ -313,7 +271,7 @@ namespace DocumentSearchPortal.Services.Search
                     },
             };
 
-            return await _hybridSearchClient.SearchAsync<SearchDocument>(model?.SearchQuery, options);
+            return await _searchClientWrapper.SearchAsync(model.SearchQuery, options, _config.IndexNameVectorSemantic);
         }
 
         /// <summary>
@@ -360,7 +318,7 @@ namespace DocumentSearchPortal.Services.Search
                     },
             };
 
-            return await _hybridCustomVectorSearchClient.SearchAsync<SearchDocument>(model?.SearchQuery, options);
+            return await _searchClientWrapper.SearchAsync(model.SearchQuery, options, _config.IndexNameHybridVectorAzFunc);
         }
 
         /// <summary>
@@ -400,9 +358,7 @@ namespace DocumentSearchPortal.Services.Search
             }
 
             // Perform the search  
-            var searchResults = await _combinedSearchClient.SearchAsync<SearchDocument>(model.SearchQuery, options);
-
-            return searchResults;
+            return await _searchClientWrapper.SearchAsync(model.SearchQuery, options, _config.IndexNameCombined);
         }
 
         public async Task<SearchResults<SearchDocument>> SecuritySearchAsync(SearchResultViewModel model)
@@ -422,7 +378,7 @@ namespace DocumentSearchPortal.Services.Search
                 options.HighlightFields.Add("content");
             }
 
-            return await _securitySearchClient.SearchAsync<SearchDocument>(model.SearchQuery, options);
+            return await _searchClientWrapper.SearchAsync(model.SearchQuery, options, _config.IndexNameSecurity);
         }
 
         public async Task<SearchResults<SearchDocument>> AIEnrichImageSearchAsync(SearchResultViewModel model)
@@ -445,7 +401,7 @@ namespace DocumentSearchPortal.Services.Search
                 options.HighlightFields.Add("merged_content");
             }
 
-            return await _aiEnrichImageSearchClient.SearchAsync<SearchDocument>(model.SearchQuery, options);
+            return await _searchClientWrapper.SearchAsync(model.SearchQuery, options, _config.IndexNameAIEnrichImage);
         }
 
         public async Task<SearchResults<SearchDocument>> AIEnrichCustomEntityLookupSearchAsync(SearchResultViewModel model)
@@ -464,7 +420,7 @@ namespace DocumentSearchPortal.Services.Search
                 options.HighlightFields.Add("content");
             }
 
-            return await _aiEnrichCustomEntityLookupSearchClient.SearchAsync<SearchDocument>(model.SearchQuery, options);
+            return await _searchClientWrapper.SearchAsync(model.SearchQuery, options, _config.IndexNameAIEnrichCustomEntityLookup);
         }
 
         public async Task<SearchResults<SearchDocument>> AIEnrichEntityLinkingSearchAsync(SearchResultViewModel model)
@@ -483,7 +439,7 @@ namespace DocumentSearchPortal.Services.Search
                 options.HighlightFields.Add("content");
             }
 
-            return await _aiEnrichEntityLinkingSearchClient.SearchAsync<SearchDocument>(model.SearchQuery, options);
+            return await _searchClientWrapper.SearchAsync(model.SearchQuery, options, _config.IndexNameAIEnrichEntityLinking);
         }
 
         public async Task<SearchResults<SearchDocument>> AIEnrichEntityRecognitionSearchAsync(SearchResultViewModel model)
@@ -516,7 +472,7 @@ namespace DocumentSearchPortal.Services.Search
                 options.HighlightFields.Add("content");
             }
 
-            return await _aiEnrichEntityRecognitionSearchClient.SearchAsync<SearchDocument>(model.SearchQuery, options);
+            return await _searchClientWrapper.SearchAsync(model.SearchQuery, options, _config.IndexNameAIEnrichEntityRecognition);
         }
 
         public async Task<SearchResults<SearchDocument>> AIEnrichKeyPhraseExtractionSearchAsync(SearchResultViewModel model)
@@ -535,7 +491,7 @@ namespace DocumentSearchPortal.Services.Search
                 options.HighlightFields.Add("content");
             }
 
-            return await _aiEnrichKeyPhraseExtractionSearchClient.SearchAsync<SearchDocument>(model.SearchQuery, options);
+            return await _searchClientWrapper.SearchAsync(model.SearchQuery, options, _config.IndexNameAIEnrichKeyPhraseExtraction);
         }
 
         public async Task<SearchResults<SearchDocument>> AIEnrichLanguageDetectionSearchAsync(SearchResultViewModel model)
@@ -556,7 +512,7 @@ namespace DocumentSearchPortal.Services.Search
                 options.HighlightFields.Add("content");
             }
 
-            return await _aiEnrichLanguageDetectionSearchClient.SearchAsync<SearchDocument>(model.SearchQuery, options);
+            return await _searchClientWrapper.SearchAsync(model.SearchQuery, options, _config.IndexNameAIEnrichLanguageDetection);
         }
 
         public async Task<SearchResults<SearchDocument>> AIEnrichPIIDetectionSearchAsync(SearchResultViewModel model)
@@ -576,7 +532,7 @@ namespace DocumentSearchPortal.Services.Search
                 options.HighlightFields.Add("content");
             }
 
-            return await _aiEnrichPIIDetectionSearchClient.SearchAsync<SearchDocument>(model.SearchQuery, options);
+            return await _searchClientWrapper.SearchAsync(model.SearchQuery, options, _config.IndexNameAIEnrichPIIDetection);
         }
     }
 }

@@ -117,6 +117,27 @@
         }
     </div>
 
+        <!-- Display Plural Search Results -->
+    <div class="row">
+        <h3>複数形インデックス検索結果</h3>
+        @if (Model?.PluralSearchResults?.TotalCount > 0)
+        {
+            @foreach (var result in Model.PluralSearchResults.GetResults())
+            {
+                <div class="container mt-4">
+
+                    @Html.Partial("_SearchResultPartial", result)
+
+                    <hr /> <!-- Add a horizontal rule to separate results -->
+                </div>
+            }
+        }
+        else
+        {
+            <p>複数形インデックス検索の結果は見つかりません。</p>
+        }
+    </div>
+
     <!-- Display Vector Search Results -->
     <div class="row">
         <h3>ベクトル検索結果</h3>

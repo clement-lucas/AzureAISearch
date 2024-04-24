@@ -1,18 +1,10 @@
 using Azure.Identity;
-using DocumentSearchPortal.Models;
-using Microsoft.Extensions.Configuration;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using DocumentSearchPortal.Data;
+using DocumentSearchPortal.Models;
 using DocumentSearchPortal.Services.Search;
 using DocumentSearchPortal.Services.Upload;
-using Azure.Search.Documents.Indexes;
-using Azure;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
-using Microsoft.Identity.Web;
-using Microsoft.Identity.Web.UI;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc.Authorization;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,6 +29,14 @@ builder.Services.Configure<SearchServiceConfig>(builder.Configuration.GetSection
 //    options.Filters.Add(new AuthorizeFilter(policy));
 //});
 
+
+// Register the SearchClientWrapper as a singleton since it doesn't maintain any state that changes during the request
+builder.Services.AddSingleton<ISearchClientWrapper, SearchClientWrapper>(serviceProvider => {
+    // Retrieve the IOptions<SearchServiceConfig> instance  
+    var config = serviceProvider.GetRequiredService<IOptions<SearchServiceConfig>>();
+    // Create a new instance of SearchClientWrapper using the config  
+    return new SearchClientWrapper(config);
+});
 
 //builder.Services.AddRazorPages().AddMicrosoftIdentityUI();
 
