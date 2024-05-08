@@ -12,40 +12,41 @@ using Azure.Search.Documents;
 public class SearchServiceTests
 {
     [TestMethod]
-    public async Task PerformKeywordSearch_ReturnsExpectedResults()
+    public async Task PerformKeywordSearch_CallsSearchAsyncWithExpectedParameters()
     {
         // Arrange  
         var mockSearchClientWrapper = new Mock<ISearchClientWrapper>();
-        var mockSearchResults = new Mock<SearchResults<SearchDocument>>();
-        // Setup the mock to return the mockSearchResults object when SearchAsync is called  
-        mockSearchClientWrapper.Setup(x => x.SearchAsync(It.IsAny<string>(), It.IsAny<SearchOptions>(), It.IsAny<string>()))
-            .ReturnsAsync(mockSearchResults.Object);
 
-        // Instead of pulling from Key Vault, directly instantiate the configuration object for testing  
+        // Setup the mock to acknowledge the call to SearchAsync.  
+        // Note: Since we can't easily mock the return of SearchAsync with a complex Response,  
+        // we'll focus on verifying the call itself and not the processing of the results.  
+        // If your method processes the results in a significant way, consider abstracting that processing  
+        // into a component that can be mocked or tested separately.  
+        mockSearchClientWrapper.Setup(x => x.SearchAsync(It.IsAny<string>(), It.IsAny<SearchOptions>(), It.IsAny<string>()))
+                               .ReturnsAsync((string query, SearchOptions options, string index) => null); // Return null or an appropriate default  
+
         var searchServiceConfig = new SearchServiceConfig
         {
-            IndexNameKeyword = "index-normal-fju-nonprod-jpeast-01", // Use test values appropriate for the scenario  
-            // Populate other necessary properties here as per the actual configuration  
+            IndexNameKeyword = "index-normal-fju-nonprod-jpeast-01",
+            // Populate other configuration properties as needed  
         };
         var options = Options.Create(searchServiceConfig);
-
-        // Now, create the service using the mocked configuration  
-        var service = new SearchService(mockSearchClientWrapper.Object, options);
+        var service = new SearchService(options, mockSearchClientWrapper.Object);
 
         var searchModel = new SearchResultViewModel
         {
-            SelectedIndexes = new List<string> { "Keyword" },
+            SelectedIndexes = new List<string> { "Normal" },
             SearchQuery = "clinical trials"
-            // Populate other necessary properties for the test  
+            // Populate other properties as necessary for the test  
         };
 
         // Act  
-        var result = await service.KeywordSearchAsync(searchModel);
+        await service.PerformSearch(searchModel);
 
         // Assert  
-        // Since SearchResults are mocked, we focus on interactions and method calls  
-        mockSearchClientWrapper.Verify(x => x.SearchAsync(It.IsAny<string>(), It.IsAny<SearchOptions>(), It.IsAny<string>()), Times.Once);
+        // Verify that SearchAsync was called exactly once with the expected parameters  
+        mockSearchClientWrapper.Verify(x => x.SearchAsync(It.IsAny<string>(), It.IsAny<SearchOptions>(), searchServiceConfig.IndexNameKeyword), Times.Once);
 
-        // Further assertions as necessary, depending on what KeywordSearchAsync returns and what you need to verify  
+        // Add further assertions here based on expected side effects or state changes  
     }
 }

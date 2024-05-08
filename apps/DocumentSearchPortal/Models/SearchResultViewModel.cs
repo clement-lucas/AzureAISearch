@@ -25,7 +25,7 @@ namespace DocumentSearchPortal.Models
 
         public SearchResults<SearchDocument>? NormalSearchResults { get; set; }
 
-        public SearchResults<SearchDocument>? PluralSearchResults { get; set; }
+        public SearchResults<SearchDocument>? MultiLanguageSearchResults { get; set; }
 
         public SearchResults<SearchDocument>? VectorSearchResults { get; set; }
 
@@ -53,7 +53,7 @@ namespace DocumentSearchPortal.Models
 
         public List<string> AvailableIndexes { get; set; } = new List<string> { 
             "Normal",
-            "Plural",
+            "Multi-Language",
             "Vector", 
             "Hybrid", 
             "Hybrid-CustomVector", 

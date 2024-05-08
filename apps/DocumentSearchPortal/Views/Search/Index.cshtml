@@ -117,16 +117,58 @@
         }
     </div>
 
-        <!-- Display Plural Search Results -->
+    <!-- Display Multi Language Search Results -->
     <div class="row">
-        <h3>複数形インデックス検索結果</h3>
-        @if (Model?.PluralSearchResults?.TotalCount > 0)
+        <h3>Multi-Languageインデックス検索結果</h3>
+        @if (Model?.MultiLanguageSearchResults?.TotalCount > 0)
         {
-            @foreach (var result in Model.PluralSearchResults.GetResults())
+            @foreach (var result in Model.MultiLanguageSearchResults.GetResults())
             {
                 <div class="container mt-4">
 
                     @Html.Partial("_SearchResultPartial", result)
+
+                    <!-- Highlighted search contents -->
+                    @if (result?.Highlights?.Count > 0 && result.Highlights.ContainsKey("content_en"))
+                    {
+                        var countPrefixSuffix = ViewData["CountPrefixSuffix"] != null ? Convert.ToInt32(ViewData["CountPrefixSuffix"]) : 0;
+
+                        foreach (var originalSentence in result.Highlights["content_en"])
+                        {
+                            if (countPrefixSuffix > 0)
+                            {
+                                string adjustedSentence = HighlightTextHelper.ProcessText(originalSentence, countPrefixSuffix);
+
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <strong>英語コンテンツフィールドからのハイライト (トリミングあり)</strong>
+                                    </div>
+                                    <div class="col-md-9">
+                                        @Html.Raw(adjustedSentence)
+                                    </div>
+                                </div>
+
+                            }
+
+                            // Display the full highlight without trimming
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <strong>英語コンテンツフィールドからのハイライト</strong>
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.Raw(originalSentence.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="row">
+                            <div class="col-md-12">
+                                <p>英語コンテンツフィールドに利用可能なハイライトはありません。</p>
+                            </div>
+                        </div>
+                    }
 
                     <hr /> <!-- Add a horizontal rule to separate results -->
                 </div>
@@ -134,7 +176,7 @@
         }
         else
         {
-            <p>複数形インデックス検索の結果は見つかりません。</p>
+            <p>Multi-Languageインデックス検索の結果は見つかりません。</p>
         }
     </div>
 

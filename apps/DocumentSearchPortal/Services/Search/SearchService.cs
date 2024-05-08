@@ -42,9 +42,9 @@ namespace DocumentSearchPortal.Services.Search
                 model.NormalSearchResults = await KeywordSearchAsync(model);
             }
 
-            if (model.SelectedIndexes.Contains("Plural"))
+            if (model.SelectedIndexes.Contains("Multi-Language"))
             {
-                model.PluralSearchResults = await PluralSearchAsync(model);
+                model.MultiLanguageSearchResults = await MultiLanguageSearchAsync(model);
             }
 
             if (model.SelectedIndexes.Contains("Vector"))
@@ -183,22 +183,45 @@ namespace DocumentSearchPortal.Services.Search
             return await _searchClientWrapper.SearchAsync(model.SearchQuery, options, _config.IndexNameKeyword);
         }
 
-        public async Task<SearchResults<SearchDocument>> PluralSearchAsync(SearchResultViewModel model)
+        public async Task<SearchResults<SearchDocument>> MultiLanguageSearchAsync(SearchResultViewModel model)
         {
             SearchOptions options = SetupCommonSearchOptions(model);
             options.Select.Add("content");
+            options.Select.Add("content_en");
             options.Select.Add("metadata_storage_name");
 
             if (model.CountHighlightResult.HasValue && model.CountHighlightResult > 0)
             {
                 options.HighlightFields.Add($"content-{model.CountHighlightResult}");
+                options.HighlightFields.Add($"content_en-{model.CountHighlightResult}");
             }
             else
             {
                 options.HighlightFields.Add("content");
+                options.HighlightFields.Add("content_en");
             }
 
-            return await _searchClientWrapper.SearchAsync(model.SearchQuery, options, _config.IndexNamePlural);
+            SearchResults<SearchDocument> searchResults = await _searchClientWrapper.SearchAsync(model.SearchQuery, options, _config.IndexNameMultiLanguage);
+
+            foreach (SearchResult<SearchDocument> result in searchResults.GetResults())
+            {
+                // Check if both 'content' and 'content_en' highlights exist  
+                if (result?.Highlights?.Count > 0 && result.Highlights.ContainsKey("content") && result.Highlights.ContainsKey("content_en"))
+                {
+                    // Get 'content' highlights as a HashSet for efficient lookups  
+                    HashSet<string>? contentHighlightsSet = new HashSet<string>(result.Highlights["content"]);
+
+                    // Filter 'content_en' highlights, removing any that exist in 'content' highlights  
+                    List<string>? filteredContentEnHighlights = result.Highlights["content_en"]
+                        .Where(highlight => !contentHighlightsSet.Contains(highlight))
+                        .ToList();
+
+                    // Update 'content_en' highlights with the filtered list  
+                    result.Highlights["content_en"] = filteredContentEnHighlights;
+                }
+            }
+
+            return searchResults;
         }
 
         /// <summary>
