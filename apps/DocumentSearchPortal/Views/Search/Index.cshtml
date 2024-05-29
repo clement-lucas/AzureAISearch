@@ -2,6 +2,8 @@
 @using System.Text
 @using DocumentSearchPortal.Helpers
 @using System.Text.Json
+@using System.Text.Json.Serialization
+
 
 
 @model DocumentSearchPortal.Models.SearchResultViewModel
@@ -301,13 +303,85 @@
         }
     </div>
 
+    <!-- Display New Hybrid Search Results -->
+    <div class="row">
+        <h3>セマンティック再ランキングを含む新しハイブリッド(Ada Model)検索結果</h3>
+        @if (Model?.NewHybridSearchResults?.TotalCount > 0)
+        {
+            @foreach (var result in Model.NewHybridSearchResults.GetResults())
+            {
+                bool isHighlighted = false;
+                <div class="container mt-4">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>Semantic Reranker Score</strong>
+                        </div>
+                        <div class="col-md-9">
+                            @(result.SemanticSearch.RerankerScore != null ? result.SemanticSearch.RerankerScore : string.Empty)
+                        </div>
+                    </div>
+
+                    @Html.Partial("_SearchResultPartial", result)
+
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>検索</strong>
+                        </div>
+                        <div class="col-md-9">                            
+                            @if (result?.SemanticSearch?.Captions?.Any() == true)
+                            {
+                                foreach (var caption in result.SemanticSearch.Captions)
+                                {
+
+                                    @if (!string.IsNullOrEmpty(caption?.Highlights) && caption.Highlights.Contains(Model.SearchQuery))
+                                    {
+                                        var modifiedCaptionHighlights = HighlightTextHelper.HighlightSearchTerm(caption.Highlights, Model.SearchQuery, "<em>", "</em>");
+                                        @Html.Raw(modifiedCaptionHighlights.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))
+                                        isHighlighted = true;
+                                    }
+                                    else if (!string.IsNullOrEmpty(caption?.Text) && caption.Text.Contains(Model.SearchQuery))
+                                    {
+                                        var modifiedCaptionText = HighlightTextHelper.HighlightSearchTerm(caption.Text, Model.SearchQuery, "<em>", "</em>");
+                                        @Html.Raw(modifiedCaptionText.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))
+                                        isHighlighted = true;
+                                    }
+                                    <hr /> <!-- Add a horizontal rule to separate results -->
+                                }
+                            }
+                            @if (!isHighlighted && result?.Highlights?.Count > 0 && result.Highlights.ContainsKey("chunk"))
+                            {
+                                foreach (var highlight in result.Highlights["chunk"])
+                                {                                    
+                                     @Html.Raw(highlight.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))
+                                    <hr /> <!-- Add a horizontal rule to separate results -->
+                                    isHighlighted = true;
+                                }
+                            }
+                            @if (!isHighlighted) {
+                                string chunk = result.Document.ContainsKey("chunk") ? (result.Document["chunk"]).ToString() : string.Empty;
+                                var modifiedchunk = HighlightTextHelper.HighlightSearchTerm(chunk, Model.SearchQuery, "<em>", "</em>");
+                                @Html.Raw(modifiedchunk.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))
+                            }
+                        </div>
+
+                    </div>
+                    <hr /> <!-- Add a horizontal rule to separate results -->
+                </div>
+            }
+        }
+        else
+        {
+            <p>新しハイブリッド検索結果は見つかりません。</p>
+        }
+    </div>
+
     <!-- Display Hybrid Custom Vector Search Results -->
     <div class="row">
         <h3>セマンティック再ランキングを含むハイブリッド(Sentence Transform Model)検索結果</h3>
         @if (Model?.HybridCustomVectorSearchResults?.TotalCount > 0)
         {
             @foreach (var result in Model.HybridCustomVectorSearchResults.GetResults())
-            {
+            {                
                 <div class="container mt-4">
                     <div class="row">
                         <div class="col-md-3">
@@ -938,33 +1012,6 @@
 
                     @Html.Partial("_SearchResultPartial", result)
 
-@*                     @if (result.Document.ContainsKey("maskedText") && result.Document["maskedText"] is object[] objList)
-                    {
-                        <div class="row">
-                            <div class="col-md-3">
-                                <strong>Masked Text</strong>
-                            </div>
-                            <div class="col-md-9">
-                                @for (int i = 0; i < objList.Length; i++)
-                                {
-                                    var objText = objList[i] as string; // Safely cast to string.
-                                    if (objText != null)
-                                    {
-                                        <text>[</text>
-
-                                        @Html.Raw(objText)
-
-                                        <text>]</text>
-                                        if (i < objList.Length - 1)
-                                        {
-                                            @:,
-                                        }
-                                    }
-                                }
-                            </div>
-                        </div>
-                    } *@
-
                     @if (result.Document.ContainsKey("maskedText"))
                     {
                         var jsonString = result.Document["maskedText"].ToString();
@@ -1037,4 +1084,173 @@
         }
     </div>
 
+    <!-- Display AI Enrichment(Text Translation) Search Results -->
+    <div class="row">
+        <h3>AI Enrichment(Text Translation)検索結果</h3>
+        @if (Model?.AIEnrichTranslationSearchResults?.TotalCount > 0)
+        {
+            @foreach (var result in Model.AIEnrichTranslationSearchResults.GetResults())
+            {
+                <div class="container mt-4">
+
+                    @Html.Partial("_SearchResultPartial", result)
+
+                    @if (result.Document.ContainsKey("translatedFromLanguageCode") && result.Document["translatedFromLanguageCode"] is string translatedFromLanguageCodeJson)
+                    {
+                        try
+                        {
+                            var translatedFromLanguageCode = JsonSerializer.Deserialize<List<string>>(translatedFromLanguageCodeJson);
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <strong>Translated From Language</strong>
+                                </div>
+                                <div class="col-md-9">
+                                    @string.Join(", ", translatedFromLanguageCode)
+                                </div>
+                            </div>
+                        }
+                        catch (JsonException)
+                        {
+                            <div>Error parsing translatedFromLanguageCode.</div>
+                        }
+                    }
+
+                    @if (result.Document.ContainsKey("translatedToLanguageCode") && result.Document["translatedToLanguageCode"] is string translatedToLanguageCodeJson)
+                    {
+                        try
+                        {
+                            var translatedToLanguageCode = JsonSerializer.Deserialize<List<string>>(translatedToLanguageCodeJson);
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <strong>Translated To Language</strong>
+                                </div>
+                                <div class="col-md-9">
+                                    @string.Join(", ", translatedToLanguageCode)
+                                </div>
+                            </div>
+                        }
+                        catch (JsonException)
+                        {
+                            <div>Error parsing translatedToLanguageCode.</div>
+                        }
+                    }
+
+                    @if (result.Document.ContainsKey("translatedText") && result.Document["translatedText"] is string translatedTextJson)
+                    {
+                        try
+                        {
+                            var translatedText = JsonSerializer.Deserialize<List<string>>(translatedTextJson);
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <strong>Translated Text</strong>
+                                </div>
+                                <div class="col-md-9">
+                                    @string.Join(", ", translatedText)
+                                </div>
+                            </div>
+                        }
+                        catch (JsonException)
+                        {
+                            <div>Error parsing translatedText.</div>
+                        }
+                    }
+
+                    <hr /> <!-- Add a horizontal rule to separate results -->
+                </div>
+            }
+        }
+        else
+        {
+            <p>AI Enrichment(Text Translation)検索結果は見つかりません。</p>
+        }
+    </div>
+
+    <!-- Display AI Enrichment(Sentiment) Search Results -->
+    <div class="row">
+        <h3>AI Enrichment(Sentiment)検索結果</h3>
+        @if (Model?.AIEnrichSentimentSearchResults?.TotalCount > 0)
+        {
+            @foreach (var result in Model.AIEnrichSentimentSearchResults.GetResults())
+            {
+                <div class="container mt-4">
+
+                    @Html.Partial("_SearchResultPartial", result)
+
+                    @if (result.Document.ContainsKey("sentiment") && result.Document["sentiment"] is object[] sentimentArray && sentimentArray.Length > 0)
+                    {
+                        var sentimentLabels = sentimentArray.OfType<string>();
+                        <div class="row">
+                            <div class="col-md-3">
+                                <strong>Overall Sentiment</strong>
+                            </div>
+                            <div class="col-md-9">
+                                @string.Join(", ", sentimentLabels)
+                            </div>
+                        </div>
+                    }
+
+                    @if (result.Document.ContainsKey("confidenceScores") && result.Document["confidenceScores"] is object[] confidenceArray && confidenceArray.Length > 0)
+                    {
+                        var confidenceJson = confidenceArray[0]?.ToString();
+                        if (!string.IsNullOrEmpty(confidenceJson))
+                        {
+                            try
+                            {
+                                ConfidenceScores? confidenceScores = JsonSerializer.Deserialize<ConfidenceScores>(confidenceJson);
+                                <div>
+                                    <strong>Overall Confidence Score:</strong>
+                                    Positive: @confidenceScores.Positive,
+                                    Neutral: @confidenceScores.Neutral,
+                                    Negative: @confidenceScores.Negative
+                                    <hr />
+                                </div>
+
+                            }
+                            catch (JsonException)
+                            {
+                                <div>Error parsing sentences.</div>
+                            }
+                        }
+                    }
+
+                    @if (result.Document.ContainsKey("sentences") && result.Document["sentences"] is object[] sentencesArray && sentencesArray.Length > 0)
+                    {
+                        var sentencesJson = sentencesArray[0]?.ToString();
+                        if (!string.IsNullOrEmpty(sentencesJson))
+                        {
+                            try
+                            {
+                                var sentences = JsonSerializer.Deserialize<List<Sentence>>(sentencesJson);
+
+                                foreach (var sentence in sentences)
+                                {
+                                    <div>
+                                        <strong>Text:</strong> @sentence.Text
+                                        <br />
+                                        <strong>Sentiment:</strong> @sentence.Sentiment
+                                        <br />
+                                        <strong>Confidence Scores:</strong>
+                                        Positive: @sentence.ConfidenceScores.Positive,
+                                        Neutral: @sentence.ConfidenceScores.Neutral,
+                                        Negative: @sentence.ConfidenceScores.Negative
+                                        <hr />
+                                    </div>
+                                }
+                            }
+                            catch (JsonException)
+                            {
+                                <div>Error parsing sentences.</div>
+                            }
+                        }
+                    }
+
+                    <hr /> <!-- Add a horizontal rule to separate results -->
+                </div>
+            }
+        }
+        else
+        {
+            <p>AI Enrichment(Sentiment)検索結果は見つかりません。</p>
+        }
+    </div>
 </div>

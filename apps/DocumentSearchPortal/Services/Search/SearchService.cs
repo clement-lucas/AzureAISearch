@@ -57,6 +57,11 @@ namespace DocumentSearchPortal.Services.Search
                 model.HybridAdaSearchResults = await HybridSearchAsync(model);
             }
 
+            if (model.SelectedIndexes.Contains("New Hybrid"))
+            {
+                model.NewHybridSearchResults = await NewHybridSearchAsync(model);
+            }
+
             if (model.SelectedIndexes.Contains("Hybrid-CustomVector"))
             {
                 model.HybridCustomVectorSearchResults = await HybridCustomVectorSearchAsync(model);
@@ -105,6 +110,16 @@ namespace DocumentSearchPortal.Services.Search
             if (model.SelectedIndexes.Contains("AI Enrichment - PII Detection"))
             {
                 model.AIEnrichPIIDetectionSearchResults = await AIEnrichPIIDetectionSearchAsync(model);
+            }
+
+            if (model.SelectedIndexes.Contains("AI Enrichment - Text Translation"))
+            {
+                model.AIEnrichTranslationSearchResults = await AIEnrichTranslationSearchAsync(model);
+            }
+
+            if (model.SelectedIndexes.Contains("AI Enrichment - Sentiment"))
+            {
+                model.AIEnrichSentimentSearchResults = await AIEnrichSentimentSearchAsync(model);
             }
 
             return model;
@@ -295,6 +310,54 @@ namespace DocumentSearchPortal.Services.Search
             };
 
             return await _searchClientWrapper.SearchAsync(model.SearchQuery, options, _config.IndexNameVectorSemantic);
+        }
+
+        /// <summary>
+        /// NewHybridSearchAsync
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns>SearchResults<SearchDocument></returns>
+        public async Task<SearchResults<SearchDocument>> NewHybridSearchAsync(SearchResultViewModel model)
+        {
+            SearchOptions options = SetupCommonSearchOptions(model);
+            options.Select.Add("chunk");
+            options.Select.Add("title");
+            options.SearchFields.Add("chunk");
+
+            if (model.SearchQuery != "*")
+            {
+                if (model.CountHighlightResult.HasValue && model.CountHighlightResult > 0)
+                {
+                    options.HighlightFields.Add($"chunk-{model.CountHighlightResult}");
+                }
+                else
+                {
+                    options.HighlightFields.Add("chunk");
+                }
+            }
+
+            options.QueryType = SearchQueryType.Semantic;
+            options.QueryLanguage = QueryLanguage.JaJp;
+            options.SemanticSearch = new()
+            {
+                SemanticConfigurationName = _config.NewSemanticConfigurationName,
+                QueryCaption = new(QueryCaptionType.Extractive),
+                QueryAnswer = new(QueryAnswerType.None),
+            };
+
+            options.VectorSearch = new()
+            {
+                Queries = {
+                        new VectorizableTextQuery(text: model.SearchQuery)
+                        {
+                            KNearestNeighborsCount = (model?.CountVectorResult.HasValue ?? false) && model.CountVectorResult > 0 ? model.CountVectorResult : null,
+                            Fields = { "vector" },
+                            Exhaustive = true
+                        }
+                    },
+            };
+
+            return await _searchClientWrapper.SearchAsync(model.SearchQuery, options, _config.IndexNameNewVectorSemantic);
         }
 
         /// <summary>
@@ -556,6 +619,48 @@ namespace DocumentSearchPortal.Services.Search
             }
 
             return await _searchClientWrapper.SearchAsync(model.SearchQuery, options, _config.IndexNameAIEnrichPIIDetection);
+        }
+
+        public async Task<SearchResults<SearchDocument>> AIEnrichTranslationSearchAsync(SearchResultViewModel model)
+        {
+            SearchOptions options = SetupCommonSearchOptions(model);
+            options.Select.Add("content");
+            options.Select.Add("metadata_storage_name");
+            options.Select.Add("translatedText");
+            options.Select.Add("translatedFromLanguageCode");
+            options.Select.Add("translatedToLanguageCode");
+
+            if (model.CountHighlightResult.HasValue && model.CountHighlightResult > 0)
+            {
+                options.HighlightFields.Add($"content-{model.CountHighlightResult}");
+            }
+            else
+            {
+                options.HighlightFields.Add("content");
+            }
+
+            return await _searchClientWrapper.SearchAsync(model.SearchQuery, options, _config.IndexNameAIEnrichTranslation);
+        }
+
+        public async Task<SearchResults<SearchDocument>> AIEnrichSentimentSearchAsync(SearchResultViewModel model)
+        {
+            SearchOptions options = SetupCommonSearchOptions(model);
+            options.Select.Add("content");
+            options.Select.Add("metadata_storage_name");
+            options.Select.Add("sentiment");
+            options.Select.Add("sentences");
+            options.Select.Add("confidenceScores");
+
+            if (model.CountHighlightResult.HasValue && model.CountHighlightResult > 0)
+            {
+                options.HighlightFields.Add($"content-{model.CountHighlightResult}");
+            }
+            else
+            {
+                options.HighlightFields.Add("content");
+            }
+
+            return await _searchClientWrapper.SearchAsync(model.SearchQuery, options, _config.IndexNameAIEnrichSentiment);
         }
     }
 }

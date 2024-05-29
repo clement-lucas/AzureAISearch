@@ -108,11 +108,24 @@
         </div>
     }
 }
-else
+@* else
 {
     <div class="row">
         <div class="col-md-12">
             <p>コンテンツに利用可能なハイライトはありません。</p>
         </div>
     </div>
+} *@
+
+@if (Model.Document.ContainsKey("content") && Model.Document["content"] != string.Empty)
+{
+    <div class="row">
+        <div class="col-md-3">
+            <strong>Original Content</strong>
+        </div>
+        <div class="col-md-9">
+            @(Model.Document["content"])
+        </div>
+    </div>
 }
+

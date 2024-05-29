@@ -6,6 +6,25 @@ namespace DocumentSearchPortal.Helpers
 {
     public class HighlightTextHelper
     {
+        public static string HighlightSearchTerm(string caption, string searchTerm, string highlightPreTag, string highlightPostTag)
+        {
+            if (string.IsNullOrEmpty(caption) || string.IsNullOrEmpty(searchTerm))
+            {
+                return caption;
+            }
+
+            // Escape special characters in search term for regex  
+            string escapedSearchTerm = Regex.Escape(searchTerm);
+
+            // Create a regex pattern to match the search term  
+            string pattern = $@"({escapedSearchTerm})";
+
+            // Replace the search term with the highlighted version  
+            string highlightedCaption = Regex.Replace(caption, pattern, $"{highlightPreTag}$1{highlightPostTag}", RegexOptions.IgnoreCase);
+
+            return highlightedCaption;
+        }
+
         public static string ProcessText(string sentence, int numChars)
         {
             // This pattern aims to capture text within <em> tags, potentially handling consecutive <em> tags  
