@@ -37,9 +37,14 @@ namespace DocumentSearchPortal.Services.Search
                 return model;
             }
 
-            if (model.SelectedIndexes.Contains("Normal"))
+            if (model.SelectedIndexes.Contains("Normal - Japanese Analyzer"))
             {
-                model.NormalSearchResults = await KeywordSearchAsync(model);
+                model.NormalJapaneseSearchResults = await KeywordJpSearchAsync(model);
+            }
+
+            if (model.SelectedIndexes.Contains("Normal - Standard Analyzer"))
+            {
+                model.NormalEnglishSearchResults = await KeywordEngSearchAsync(model);
             }
 
             if (model.SelectedIndexes.Contains("Multi-Language"))
@@ -180,7 +185,7 @@ namespace DocumentSearchPortal.Services.Search
         /// </summary>
         /// <param name="model"></param>
         /// <returns>SearchResults<SearchDocument></returns>
-        public async Task<SearchResults<SearchDocument>> KeywordSearchAsync(SearchResultViewModel model)
+        public async Task<SearchResults<SearchDocument>> KeywordJpSearchAsync(SearchResultViewModel model)
         {
             SearchOptions options = SetupCommonSearchOptions(model);
             options.Select.Add("content");
@@ -196,6 +201,24 @@ namespace DocumentSearchPortal.Services.Search
             }
 
             return await _searchClientWrapper.SearchAsync(model.SearchQuery, options, _config.IndexNameKeyword);
+        }
+
+        public async Task<SearchResults<SearchDocument>> KeywordEngSearchAsync(SearchResultViewModel model)
+        {
+            SearchOptions options = SetupCommonSearchOptions(model);
+            options.Select.Add("content");
+            options.Select.Add("metadata_storage_name");
+
+            if (model.CountHighlightResult.HasValue && model.CountHighlightResult > 0)
+            {
+                options.HighlightFields.Add($"content-{model.CountHighlightResult}");
+            }
+            else
+            {
+                options.HighlightFields.Add("content");
+            }
+
+            return await _searchClientWrapper.SearchAsync(model.SearchQuery, options, _config.IndexNameKeywordEnglish);
         }
 
         public async Task<SearchResults<SearchDocument>> MultiLanguageSearchAsync(SearchResultViewModel model)

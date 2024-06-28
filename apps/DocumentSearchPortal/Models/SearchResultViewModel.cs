@@ -24,7 +24,9 @@ namespace DocumentSearchPortal.Models
 
         public string? SearchMode { get; set; }
 
-        public SearchResults<SearchDocument>? NormalSearchResults { get; set; }
+        public SearchResults<SearchDocument>? NormalJapaneseSearchResults { get; set; }
+
+        public SearchResults<SearchDocument>? NormalEnglishSearchResults { get; set; }
 
         public SearchResults<SearchDocument>? MultiLanguageSearchResults { get; set; }
 
@@ -59,7 +61,8 @@ namespace DocumentSearchPortal.Models
         public SearchResults<SearchDocument>? AIEnrichSentimentSearchResults { get; set; }
 
         public List<string> AvailableIndexes { get; set; } = new List<string> {
-            "Normal",
+            "Normal - Japanese Analyzer",
+            "Normal - Standard Analyzer",
             "Multi-Language",
             "Vector",
             "Hybrid",
