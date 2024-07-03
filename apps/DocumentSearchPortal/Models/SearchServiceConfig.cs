@@ -6,8 +6,9 @@
     public class SearchServiceConfig
     {
         public string ServiceName { get; set; } = string.Empty;
-        public string IndexNameKeyword { get; set; } = string.Empty;
+        public string IndexNameKeywordJapanese { get; set; } = string.Empty;
         public string IndexNameKeywordEnglish { get; set; } = string.Empty;
+        public string IndexNameKeywordStandard { get; set; } = string.Empty;
         public string IndexNameMultiLanguage { get; set; } = string.Empty;
         public string IndexNameVector { get; set; } = string.Empty;
         public string IndexNameVectorSemantic { get; set; } = string.Empty;

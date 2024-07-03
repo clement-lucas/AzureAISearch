@@ -100,7 +100,7 @@
 <div class="row">    
     <!-- Display Normal Japanese Search Results -->
     <div class="row">
-        <h3>キーワード検索結果（日本語）</h3>
+        <h3>キーワード検索結果（Japanese Analyzer）</h3>
         @if (Model?.NormalJapaneseSearchResults?.TotalCount > 0)
         {
             @foreach (var result in Model.NormalJapaneseSearchResults.GetResults())
@@ -119,12 +119,33 @@
         }
     </div>
 
-    <!-- Display Normal Standard Search Results -->
+    <!-- Display Normal English Search Results -->
     <div class="row">
-        <h3>キーワード検索結果（Standard）</h3>
+        <h3>キーワード検索結果（English Analyzer）</h3>
         @if (Model?.NormalEnglishSearchResults?.TotalCount > 0)
         {
             @foreach (var result in Model.NormalEnglishSearchResults.GetResults())
+            {
+                <div class="container mt-4">
+
+                    @Html.Partial("_SearchResultPartial", result)
+
+                    <hr /> <!-- Add a horizontal rule to separate results -->
+                </div>
+            }
+        }
+        else
+        {
+            <p>キーワード検索の結果は見つかりません。</p>
+        }
+    </div>
+
+    <!-- Display Normal Standard Search Results -->
+    <div class="row">
+        <h3>キーワード検索結果（Standard Analyzer）</h3>
+        @if (Model?.NormalStandardSearchResults?.TotalCount > 0)
+        {
+            @foreach (var result in Model.NormalStandardSearchResults.GetResults())
             {
                 <div class="container mt-4">
 
