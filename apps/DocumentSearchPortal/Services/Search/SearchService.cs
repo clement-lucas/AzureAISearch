@@ -52,9 +52,14 @@ namespace DocumentSearchPortal.Services.Search
                 model.NormalStandardSearchResults = await KeywordStdSearchAsync(model);
             }
 
-            if (model.SelectedIndexes.Contains("Multi-Language"))
+            if (model.SelectedIndexes.Contains("Normal - JP+EN"))
             {
                 model.MultiLanguageSearchResults = await MultiLanguageSearchAsync(model);
+            }
+
+            if (model.SelectedIndexes.Contains("Normal - JP+EN+STDlucene")) 
+            {
+                model.MultiLanguageAndStdSearchResults = await MultiLanguageAndStdSearchAsync(model);
             }
 
             if (model.SelectedIndexes.Contains("Vector"))
@@ -279,6 +284,58 @@ namespace DocumentSearchPortal.Services.Search
 
                     // Update 'content_en' highlights with the filtered list  
                     result.Highlights["content_en"] = filteredContentEnHighlights;
+                }
+            }
+
+            return searchResults;
+        }
+
+        public async Task<SearchResults<SearchDocument>> MultiLanguageAndStdSearchAsync(SearchResultViewModel model)
+        {
+            SearchOptions options = SetupCommonSearchOptions(model);
+            options.Select.Add("content");
+            options.Select.Add("content_en");
+            options.Select.Add("content_std");
+            options.Select.Add("metadata_storage_name");
+
+            if (model.CountHighlightResult.HasValue && model.CountHighlightResult > 0)
+            {
+                options.HighlightFields.Add($"content-{model.CountHighlightResult}");
+                options.HighlightFields.Add($"content_en-{model.CountHighlightResult}");
+                options.HighlightFields.Add($"content_std-{model.CountHighlightResult}");
+            }
+            else
+            {
+                options.HighlightFields.Add("content");
+                options.HighlightFields.Add("content_en");
+                options.HighlightFields.Add("content_std");
+            }
+
+            SearchResults<SearchDocument> searchResults = await _searchClientWrapper.SearchAsync(model.SearchQuery, options, "index-multilanguageandstd-fju-nonprod-jpeast-01");
+
+            foreach (SearchResult<SearchDocument> result in searchResults.GetResults())
+            {
+                // Check if 'content', 'content_en', and 'content_std' highlights exist
+                if (result?.Highlights?.Count > 0 && result.Highlights.ContainsKey("content") && result.Highlights.ContainsKey("content_en") && result.Highlights.ContainsKey("content_std"))
+                {
+                    // Get 'content' highlights as a HashSet for efficient lookups
+                    HashSet<string>? contentHighlightsSet = new HashSet<string>(result.Highlights["content"]);
+
+                    // Filter 'content_en' highlights, removing any that exist in 'content' highlights
+                    List<string>? filteredContentEnHighlights = result.Highlights["content_en"]
+                        .Where(highlight => !contentHighlightsSet.Contains(highlight))
+                        .ToList();
+
+                    // Update 'content_en' highlights with the filtered list
+                    result.Highlights["content_en"] = filteredContentEnHighlights;
+
+                    // Similarly, filter 'content_std' highlights, removing any that exist in 'content' highlights
+                    List<string>? filteredContentStdHighlights = result.Highlights["content_std"]
+                        .Where(highlight => !contentHighlightsSet.Contains(highlight))
+                        .ToList();
+
+                    // Update 'content_std' highlights with the filtered list
+                    result.Highlights["content_std"] = filteredContentStdHighlights;
                 }
             }
 

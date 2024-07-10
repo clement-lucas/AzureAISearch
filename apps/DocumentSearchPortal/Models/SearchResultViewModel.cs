@@ -31,6 +31,7 @@ namespace DocumentSearchPortal.Models
         public SearchResults<SearchDocument>? NormalStandardSearchResults { get; set; }
 
         public SearchResults<SearchDocument>? MultiLanguageSearchResults { get; set; }
+        public SearchResults<SearchDocument>? MultiLanguageAndStdSearchResults { get; set; }
 
         public SearchResults<SearchDocument>? VectorSearchResults { get; set; }
 
@@ -66,7 +67,8 @@ namespace DocumentSearchPortal.Models
             "Normal - Japanese Analyzer",
             "Normal - English Analyzer",
             "Normal - Standard Analyzer",
-            "Multi-Language",
+            "Normal - JP+EN",
+            "Normal - JP+EN+STDlucene",
             "Vector",
             "Hybrid",
             "New Hybrid",
