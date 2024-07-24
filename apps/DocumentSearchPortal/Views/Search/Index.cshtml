@@ -163,7 +163,7 @@
 
     <!-- Display Multi Language Search Results -->
     <div class="row">
-        <h3>Norma - JP+ENインデックス検索結果</h3>
+        <h3>Normal - JP+ENインデックス検索結果</h3>
         @if (Model?.MultiLanguageSearchResults?.TotalCount > 0)
         {
             @foreach (var result in Model.MultiLanguageSearchResults.GetResults())
@@ -220,11 +220,11 @@
         }
         else
         {
-            <p>Multi-Languageインデックス検索の結果は見つかりません。</p>
+            <p>Normal - JP+ENインデックス検索の結果は見つかりません。</p>
         }
     </div>
 
-        <!-- Display Multi Language Search Results -->
+    <!-- Display Multi Language Search Results -->
     <div class="row">
         <h3>Normal - JP+EN+STDluceneインデックス検索結果</h3>
         @if (Model?.MultiLanguageAndStdSearchResults?.TotalCount > 0)
@@ -248,7 +248,7 @@
 
                                 <div class="row">
                                     <div class="col-md-3">
-                                        <strong>英語コンテンツフィールドからのハイライト (トリミングあり)</strong>
+                                        <strong>コンテンツフィールドからのハイライト (EN Analyzer - トリミングあり)</strong>
                                     </div>
                                     <div class="col-md-9">
                                         @Html.Raw(adjustedSentence)
@@ -260,7 +260,7 @@
                             // Display the full highlight without trimming
                             <div class="row">
                                 <div class="col-md-3">
-                                    <strong>英語コンテンツフィールドからのハイライト</strong>
+                                    <strong>コンテンツからのハイライト(EN Analyzer)</strong>
                                 </div>
                                 <div class="col-md-9">
                                     @Html.Raw(originalSentence.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))
@@ -290,7 +290,7 @@
 
                                 <div class="row">
                                     <div class="col-md-3">
-                                        <strong>STDluceneコンテンツフィールドからのハイライト (トリミングあり)</strong>
+                                        <strong>コンテンツフィールドからのハイライト (STD Analyzer - トリミングあり)</strong>
                                     </div>
                                     <div class="col-md-9">
                                         @Html.Raw(adjustedSentence)
@@ -302,7 +302,7 @@
                             // Display the full highlight without trimming
                             <div class="row">
                                 <div class="col-md-3">
-                                    <strong>STDluceneコンテンツフィールドからのハイライト</strong>
+                                    <strong>コンテンツからのハイライト(STD Analyzer)</strong>
                                 </div>
                                 <div class="col-md-9">
                                     @Html.Raw(originalSentence.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))

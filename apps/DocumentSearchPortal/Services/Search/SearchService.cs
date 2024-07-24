@@ -313,34 +313,44 @@ namespace DocumentSearchPortal.Services.Search
 
             SearchResults<SearchDocument> searchResults = await _searchClientWrapper.SearchAsync(model.SearchQuery, options, "index-multilanguageandstd-fju-nonprod-jpeast-01");
 
-            foreach (SearchResult<SearchDocument> result in searchResults.GetResults())
-            {
-                // Check if 'content', 'content_en', and 'content_std' highlights exist
-                if (result?.Highlights?.Count > 0 && result.Highlights.ContainsKey("content") && result.Highlights.ContainsKey("content_en") && result.Highlights.ContainsKey("content_std"))
-                {
-                    // Get 'content' highlights as a HashSet for efficient lookups
-                    HashSet<string>? contentHighlightsSet = new HashSet<string>(result.Highlights["content"]);
+            //foreach (SearchResult<SearchDocument> result in searchResults.GetResults())
+            //{
+            //    if (result?.Highlights?.Count > 0)
+            //    {
+            //        // Merge all highlights from different analyzers  
+            //        HashSet<string> uniqueHighlights = new HashSet<string>();
 
-                    // Filter 'content_en' highlights, removing any that exist in 'content' highlights
-                    List<string>? filteredContentEnHighlights = result.Highlights["content_en"]
-                        .Where(highlight => !contentHighlightsSet.Contains(highlight))
-                        .ToList();
+            //        if (result.Highlights.ContainsKey("content"))
+            //        {
+            //            uniqueHighlights.UnionWith(result.Highlights["content"]);
+            //        }
+            //        if (result.Highlights.ContainsKey("content_en"))
+            //        {
+            //            uniqueHighlights.UnionWith(result.Highlights["content_en"]);
+            //        }
+            //        if (result.Highlights.ContainsKey("content_std"))
+            //        {
+            //            uniqueHighlights.UnionWith(result.Highlights["content_std"]);
+            //        }
 
-                    // Update 'content_en' highlights with the filtered list
-                    result.Highlights["content_en"] = filteredContentEnHighlights;
+            //        // Update highlights with the merged unique highlights  
+            //        result.Highlights["content"] = uniqueHighlights.ToList();
 
-                    // Similarly, filter 'content_std' highlights, removing any that exist in 'content' highlights
-                    List<string>? filteredContentStdHighlights = result.Highlights["content_std"]
-                        .Where(highlight => !contentHighlightsSet.Contains(highlight))
-                        .ToList();
-
-                    // Update 'content_std' highlights with the filtered list
-                    result.Highlights["content_std"] = filteredContentStdHighlights;
-                }
-            }
+            //        // Clear other highlight fields to avoid duplication  
+            //        if (result.Highlights.ContainsKey("content_en"))
+            //        {
+            //            result.Highlights["content_en"].Clear();
+            //        }
+            //        if (result.Highlights.ContainsKey("content_std"))
+            //        {
+            //            result.Highlights["content_std"].Clear();
+            //        }
+            //    }
+            //}
 
             return searchResults;
         }
+
 
         /// <summary>
         /// VectorSearchAsync
