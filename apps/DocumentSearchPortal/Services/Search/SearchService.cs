@@ -3,6 +3,7 @@ using Azure.Search.Documents;
 using Azure.Search.Documents.Models;
 using DocumentSearchPortal.Models;
 using Microsoft.Extensions.Options;
+using System.Text;
 
 
 namespace DocumentSearchPortal.Services.Search
@@ -313,42 +314,136 @@ namespace DocumentSearchPortal.Services.Search
 
             SearchResults<SearchDocument> searchResults = await _searchClientWrapper.SearchAsync(model.SearchQuery, options, "index-multilanguageandstd-fju-nonprod-jpeast-01");
 
-            //foreach (SearchResult<SearchDocument> result in searchResults.GetResults())
-            //{
-            //    if (result?.Highlights?.Count > 0)
-            //    {
-            //        // Merge all highlights from different analyzers  
-            //        HashSet<string> uniqueHighlights = new HashSet<string>();
+            foreach (SearchResult<SearchDocument> result in searchResults.GetResults())
+            {
+                if (result?.Highlights?.Count > 0)
+                {
+                    // Store non-merged highlights  
+                    //result.Document["highlights_content_jp"] = result.Highlights.ContainsKey("content") ? result.Highlights["content"] : new List<string>();
+                    result.Document["highlights_content_en"] = result.Highlights.ContainsKey("content_en") ? result.Highlights["content_en"] : new List<string>();
+                    result.Document["highlights_content_std"] = result.Highlights.ContainsKey("content_std") ? result.Highlights["content_std"] : new List<string>();
 
-            //        if (result.Highlights.ContainsKey("content"))
-            //        {
-            //            uniqueHighlights.UnionWith(result.Highlights["content"]);
-            //        }
-            //        if (result.Highlights.ContainsKey("content_en"))
-            //        {
-            //            uniqueHighlights.UnionWith(result.Highlights["content_en"]);
-            //        }
-            //        if (result.Highlights.ContainsKey("content_std"))
-            //        {
-            //            uniqueHighlights.UnionWith(result.Highlights["content_std"]);
-            //        }
+                    // Merge all highlights from different analyzers  
+                    HashSet<string> uniqueHighlights = new HashSet<string>();
 
-            //        // Update highlights with the merged unique highlights  
-            //        result.Highlights["content"] = uniqueHighlights.ToList();
+                    if (result.Highlights.ContainsKey("content"))
+                    {
+                        uniqueHighlights.UnionWith(result.Highlights["content"]);
+                    }
+                    if (result.Highlights.ContainsKey("content_en"))
+                    {
+                        uniqueHighlights.UnionWith(result.Highlights["content_en"]);
+                    }
+                    if (result.Highlights.ContainsKey("content_std"))
+                    {
+                        uniqueHighlights.UnionWith(result.Highlights["content_std"]);
+                    }
 
-            //        // Clear other highlight fields to avoid duplication  
-            //        if (result.Highlights.ContainsKey("content_en"))
-            //        {
-            //            result.Highlights["content_en"].Clear();
-            //        }
-            //        if (result.Highlights.ContainsKey("content_std"))
-            //        {
-            //            result.Highlights["content_std"].Clear();
-            //        }
-            //    }
-            //}
+                    // Merge highlights into a list of merged sentences  
+                    List<string> mergedHighlights = MergeHighlightTexts(uniqueHighlights.ToList());
+
+                    // Store merged highlights  
+                    result.Document["merged_highlights"] = mergedHighlights;
+                }
+            }
 
             return searchResults;
+        }
+
+        private List<string> MergeHighlightTexts(List<string> highlights)
+        {
+            if (highlights == null || highlights.Count == 0)
+                return new List<string>();
+
+            var uniqueSentences = new Dictionary<string, List<(int Start, int End)>>();
+
+            foreach (var highlight in highlights)
+            {
+                var normalizedSentence = new StringBuilder();
+                var tagPositions = new List<(int Start, int End)>();
+
+                int offset = 0;
+                while (offset < highlight.Length)
+                {
+                    int start = highlight.IndexOf("<em>", offset);
+                    int end = highlight.IndexOf("</em>", offset);
+
+                    if (start >= 0 && (start < end || end == -1))
+                    {
+                        normalizedSentence.Append(highlight, offset, start - offset);
+                        offset = start + "<em>".Length;
+                        int textStart = normalizedSentence.Length;
+                        end = highlight.IndexOf("</em>", offset);
+                        if (end >= 0)
+                        {
+                            normalizedSentence.Append(highlight, offset, end - offset);
+                            offset = end + "</em>".Length;
+                            int textEnd = normalizedSentence.Length;
+                            tagPositions.Add((textStart, textEnd));
+                        }
+                        else
+                        {
+                            normalizedSentence.Append(highlight, offset, highlight.Length - offset);
+                            offset = highlight.Length;
+                        }
+                    }
+                    else
+                    {
+                        normalizedSentence.Append(highlight, offset, highlight.Length - offset);
+                        offset = highlight.Length;
+                    }
+                }
+
+                var sentenceStr = normalizedSentence.ToString();
+
+                if (!uniqueSentences.ContainsKey(sentenceStr))
+                {
+                    uniqueSentences[sentenceStr] = new List<(int Start, int End)>();
+                }
+                uniqueSentences[sentenceStr].AddRange(tagPositions);
+            }
+
+            var mergedSentences = new List<string>();
+
+            foreach (var kvp in uniqueSentences)
+            {
+                var sentence = kvp.Key;
+                var positions = kvp.Value.OrderBy(p => p.Start).ToList();
+
+                var highlightedSentence = new StringBuilder();
+                int lastIndex = 0;
+
+                foreach (var (start, end) in positions)
+                {
+                    // Append text before highlight  
+                    if (start > lastIndex)
+                    {
+                        highlightedSentence.Append(sentence, lastIndex, start - lastIndex);
+                    }
+
+                    // Append highlighted text  
+                    highlightedSentence.Append("<em>");
+                    highlightedSentence.Append(sentence, start, end - start);
+                    highlightedSentence.Append("</em>");
+                    lastIndex = end;
+                }
+
+                // Append remaining text after the last highlight  
+                if (lastIndex < sentence.Length)
+                {
+                    highlightedSentence.Append(sentence, lastIndex, sentence.Length - lastIndex);
+                }
+
+                mergedSentences.Add(highlightedSentence.ToString());
+            }
+
+            // Remove any leading or trailing spaces to avoid accidental extra content  
+            for (int i = 0; i < mergedSentences.Count; i++)
+            {
+                mergedSentences[i] = mergedSentences[i].Trim();
+            }
+
+            return mergedSentences;
         }
 
 

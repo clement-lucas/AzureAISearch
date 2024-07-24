@@ -224,46 +224,102 @@
         }
     </div>
 
-    <!-- Display Multi Language Search Results -->
-    <div class="row">
-        <h3>Normal - JP+EN+STDluceneインデックス検索結果</h3>
-        @if (Model?.MultiLanguageAndStdSearchResults?.TotalCount > 0)
-        {
-            @foreach (var result in Model.MultiLanguageAndStdSearchResults.GetResults())
-            {
-                <div class="container mt-4">
-
-                    @Html.Partial("_SearchResultPartial", result)
-
-                    <!-- Highlighted search contents -->
-                    @if (result?.Highlights?.Count > 0 && result.Highlights.ContainsKey("content_en"))
+    <!-- Display Multi Language Search Results -->  
+    <div class="row">  
+        <h3>Normal - JP+EN+STDluceneインデックス検索結果</h3>  
+        @if (Model?.MultiLanguageAndStdSearchResults?.TotalCount > 0)  
+        {  
+            @foreach (var result in Model.MultiLanguageAndStdSearchResults.GetResults())  
+            {  
+                <div class="container mt-4">  
+                    @Html.Partial("_SearchResultPartial", result)  
+  
+                    @* <!-- JP Highlights -->
+                    @if (result?.Document?.ContainsKey("highlights_content_jp") == true && ((IList<string>)result.Document["highlights_content_jp"]).Count > 0)
                     {
-                        var countPrefixSuffix = ViewData["CountPrefixSuffix"] != null ? Convert.ToInt32(ViewData["CountPrefixSuffix"]) : 0;
-
-                        foreach (var originalSentence in result.Highlights["content_en"])
+                        foreach (var highlight in (IList<string>)result.Document["highlights_content_jp"])
+                        {  
+                            <div class="row">  
+                                <div class="col-md-3">  
+                                    <strong>コンテンツからのハイライト (JP Analyzer)</strong>  
+                                </div>  
+                                <div class="col-md-9">  
+                                    @Html.Raw(highlight.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))  
+                                </div>  
+                            </div>  
+                        }  
+                    }  
+                    else  
+                    {  
+                        <div class="row">  
+                            <div class="col-md-12">  
+                                <p>JPコンテンツに利用可能なハイライトはありません。</p>  
+                            </div>  
+                        </div>  
+                    }   *@
+  
+                    <!-- EN Highlights -->  
+                    @if (result?.Document?.ContainsKey("highlights_content_en") == true && ((IList<string>)result.Document["highlights_content_en"]).Count > 0)  
+                    {  
+                        foreach (var highlight in (IList<string>)result.Document["highlights_content_en"])  
+                        {  
+                            <div class="row">  
+                                <div class="col-md-3">  
+                                    <strong>コンテンツからのハイライト (EN Analyzer)</strong>  
+                                </div>  
+                                <div class="col-md-9">  
+                                    @Html.Raw(highlight.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))  
+                                </div>  
+                            </div>  
+                        }  
+                    }  
+                    else  
+                    {  
+                        <div class="row">  
+                            <div class="col-md-12">  
+                                <p>英語コンテンツフィールドに利用可能なハイライトはありません。</p>  
+                            </div>  
+                        </div>  
+                    }  
+  
+                    <!-- STD Highlights -->  
+                    @if (result?.Document?.ContainsKey("highlights_content_std") == true && ((IList<string>)result.Document["highlights_content_std"]).Count > 0)  
+                    {  
+                        foreach (var highlight in (IList<string>)result.Document["highlights_content_std"])  
+                        {  
+                            <div class="row">  
+                                <div class="col-md-3">  
+                                    <strong>コンテンツからのハイライト (STD Analyzer)</strong>  
+                                </div>  
+                                <div class="col-md-9">  
+                                    @Html.Raw(highlight.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))  
+                                </div>  
+                            </div>  
+                        }  
+                    }  
+                    else  
+                    {  
+                        <div class="row">  
+                            <div class="col-md-12">  
+                                <p>STDluceneコンテンツフィールドに利用可能なハイライトはありません。</p>  
+                            </div>  
+                        </div>  
+                    }  
+  
+                    <hr /> <!-- Add a horizontal rule to separate results -->
+                    
+                    <!-- Display merged highlights -->
+                    <h4>Merged Highlights</h4>
+                    @if (result?.Document?.ContainsKey("merged_highlights") == true && ((IList<string>)result.Document["merged_highlights"]).Count > 0)
+                    {
+                        foreach (var highlight in (IList<string>)result.Document["merged_highlights"])
                         {
-                            if (countPrefixSuffix > 0)
-                            {
-                                string adjustedSentence = HighlightTextHelper.ProcessText(originalSentence, countPrefixSuffix);
-
-                                <div class="row">
-                                    <div class="col-md-3">
-                                        <strong>コンテンツフィールドからのハイライト (EN Analyzer - トリミングあり)</strong>
-                                    </div>
-                                    <div class="col-md-9">
-                                        @Html.Raw(adjustedSentence)
-                                    </div>
-                                </div>
-
-                            }
-
-                            // Display the full highlight without trimming
                             <div class="row">
                                 <div class="col-md-3">
-                                    <strong>コンテンツからのハイライト(EN Analyzer)</strong>
+                                    <strong>統合されたハイライト</strong>
                                 </div>
                                 <div class="col-md-9">
-                                    @Html.Raw(originalSentence.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))
+                                    @Html.Raw(highlight.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))
                                 </div>
                             </div>
                         }
@@ -272,52 +328,11 @@
                     {
                         <div class="row">
                             <div class="col-md-12">
-                                <p>英語コンテンツフィールドに利用可能なハイライトはありません。</p>
+                                <p>統合されたハイライトはありません。</p>
                             </div>
                         </div>
                     }
 
-                    <!-- Highlighted STDlucene search contents -->
-                    @if (result?.Highlights?.Count > 0 && result.Highlights.ContainsKey("content_std"))
-                    {
-                        var countPrefixSuffix = ViewData["CountPrefixSuffix"] != null ? Convert.ToInt32(ViewData["CountPrefixSuffix"]) : 0;
-
-                        foreach (var originalSentence in result.Highlights["content_std"])
-                        {
-                            if (countPrefixSuffix > 0)
-                            {
-                                string adjustedSentence = HighlightTextHelper.ProcessText(originalSentence, countPrefixSuffix);
-
-                                <div class="row">
-                                    <div class="col-md-3">
-                                        <strong>コンテンツフィールドからのハイライト (STD Analyzer - トリミングあり)</strong>
-                                    </div>
-                                    <div class="col-md-9">
-                                        @Html.Raw(adjustedSentence)
-                                    </div>
-                                </div>
-
-                            }
-
-                            // Display the full highlight without trimming
-                            <div class="row">
-                                <div class="col-md-3">
-                                    <strong>コンテンツからのハイライト(STD Analyzer)</strong>
-                                </div>
-                                <div class="col-md-9">
-                                    @Html.Raw(originalSentence.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))
-                                </div>
-                            </div>
-                        }
-                    }
-                    else
-                    {
-                        <div class="row">
-                            <div class="col-md-12">
-                                <p>STDluceneコンテンツフィールドに利用可能なハイライトはありません。</p>
-                            </div>
-                        </div>
-                    }
 
                     <hr /> <!-- Add a horizontal rule to separate results -->
                 </div>
