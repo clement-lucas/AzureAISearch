@@ -88,7 +88,7 @@
 
             <div class="row">
                 <div class="col-md-3">
-                    <strong>コンテンツからのハイライト (JP Analyzer - トリミングあり)</strong>
+                    <strong>JP Analyzer コンテンツからのハイライト (トリミングあり)</strong>
                 </div>
                 <div class="col-md-9">
                     @Html.Raw(adjustedSentence)
@@ -100,7 +100,7 @@
         // Display the full highlight without trimming
         <div class="row">
             <div class="col-md-3">
-                <strong>コンテンツからのハイライト(JP Analyzer)</strong>
+                <strong>JP Analyzer コンテンツからのハイライト</strong>
             </div>
             <div class="col-md-9">
                 @Html.Raw(originalSentence.Replace("<em>", "<span class=\"highlighted\">").Replace("</em>", "</span>"))
@@ -111,7 +111,7 @@
 else{
     <div class="row">
         <div class="col-md-12">
-            <p>JPコンテンツに利用可能なハイライトはありません。</p>
+            <p>JP Analyzer コンテンツに利用可能なハイライトはありません。</p>
         </div>
     </div>
 }

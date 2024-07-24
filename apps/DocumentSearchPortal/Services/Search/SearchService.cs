@@ -4,6 +4,7 @@ using Azure.Search.Documents.Models;
 using DocumentSearchPortal.Models;
 using Microsoft.Extensions.Options;
 using System.Text;
+using System.Text.RegularExpressions;
 
 
 namespace DocumentSearchPortal.Services.Search
@@ -272,19 +273,25 @@ namespace DocumentSearchPortal.Services.Search
 
             foreach (SearchResult<SearchDocument> result in searchResults.GetResults())
             {
-                // Check if both 'content' and 'content_en' highlights exist  
-                if (result?.Highlights?.Count > 0 && result.Highlights.ContainsKey("content") && result.Highlights.ContainsKey("content_en"))
+                if (result?.Highlights?.Count > 0)
                 {
-                    // Get 'content' highlights as a HashSet for efficient lookups  
-                    HashSet<string>? contentHighlightsSet = new HashSet<string>(result.Highlights["content"]);
+                    // Merge all highlights from different analyzers  
+                    HashSet<string> uniqueHighlights = new HashSet<string>();
 
-                    // Filter 'content_en' highlights, removing any that exist in 'content' highlights  
-                    List<string>? filteredContentEnHighlights = result.Highlights["content_en"]
-                        .Where(highlight => !contentHighlightsSet.Contains(highlight))
-                        .ToList();
+                    if (result.Highlights.ContainsKey("content"))
+                    {
+                        uniqueHighlights.UnionWith(result.Highlights["content"]);
+                    }
+                    if (result.Highlights.ContainsKey("content_en"))
+                    {
+                        uniqueHighlights.UnionWith(result.Highlights["content_en"]);
+                    }                    
 
-                    // Update 'content_en' highlights with the filtered list  
-                    result.Highlights["content_en"] = filteredContentEnHighlights;
+                    // Merge highlights into a list of merged sentences  
+                    List<string> mergedHighlights = MergeHighlightTexts(uniqueHighlights.ToList());
+
+                    // Store merged highlights  
+                    result.Document["merged_highlights"] = mergedHighlights;
                 }
             }
 
@@ -318,11 +325,6 @@ namespace DocumentSearchPortal.Services.Search
             {
                 if (result?.Highlights?.Count > 0)
                 {
-                    // Store non-merged highlights  
-                    //result.Document["highlights_content_jp"] = result.Highlights.ContainsKey("content") ? result.Highlights["content"] : new List<string>();
-                    result.Document["highlights_content_en"] = result.Highlights.ContainsKey("content_en") ? result.Highlights["content_en"] : new List<string>();
-                    result.Document["highlights_content_std"] = result.Highlights.ContainsKey("content_std") ? result.Highlights["content_std"] : new List<string>();
-
                     // Merge all highlights from different analyzers  
                     HashSet<string> uniqueHighlights = new HashSet<string>();
 
@@ -350,100 +352,53 @@ namespace DocumentSearchPortal.Services.Search
             return searchResults;
         }
 
-        private List<string> MergeHighlightTexts(List<string> highlights)
+        private List<string> MergeHighlightTexts(List<string> inputList)
         {
-            if (highlights == null || highlights.Count == 0)
-                return new List<string>();
+            // Create a dictionary to store unique sentences  
+            var sentenceDictionary = new Dictionary<string, HashSet<string>>();
 
-            var uniqueSentences = new Dictionary<string, List<(int Start, int End)>>();
-
-            foreach (var highlight in highlights)
+            foreach (var sentence in inputList)
             {
-                var normalizedSentence = new StringBuilder();
-                var tagPositions = new List<(int Start, int End)>();
+                // Extract the text without <em> tags  
+                var plainText = Regex.Replace(sentence, @"<em>|</em>", "");
 
-                int offset = 0;
-                while (offset < highlight.Length)
+                // If the sentence is not already in the dictionary, add it  
+                if (!sentenceDictionary.ContainsKey(plainText))
                 {
-                    int start = highlight.IndexOf("<em>", offset);
-                    int end = highlight.IndexOf("</em>", offset);
-
-                    if (start >= 0 && (start < end || end == -1))
-                    {
-                        normalizedSentence.Append(highlight, offset, start - offset);
-                        offset = start + "<em>".Length;
-                        int textStart = normalizedSentence.Length;
-                        end = highlight.IndexOf("</em>", offset);
-                        if (end >= 0)
-                        {
-                            normalizedSentence.Append(highlight, offset, end - offset);
-                            offset = end + "</em>".Length;
-                            int textEnd = normalizedSentence.Length;
-                            tagPositions.Add((textStart, textEnd));
-                        }
-                        else
-                        {
-                            normalizedSentence.Append(highlight, offset, highlight.Length - offset);
-                            offset = highlight.Length;
-                        }
-                    }
-                    else
-                    {
-                        normalizedSentence.Append(highlight, offset, highlight.Length - offset);
-                        offset = highlight.Length;
-                    }
+                    sentenceDictionary[plainText] = new HashSet<string>();
                 }
 
-                var sentenceStr = normalizedSentence.ToString();
-
-                if (!uniqueSentences.ContainsKey(sentenceStr))
+                // Add all <em> tags from the current sentence to the dictionary entry  
+                foreach (Match match in Regex.Matches(sentence, @"<em>(.*?)</em>"))
                 {
-                    uniqueSentences[sentenceStr] = new List<(int Start, int End)>();
+                    sentenceDictionary[plainText].Add(match.Value);
                 }
-                uniqueSentences[sentenceStr].AddRange(tagPositions);
             }
 
-            var mergedSentences = new List<string>();
+            var result = new List<string>();
 
-            foreach (var kvp in uniqueSentences)
+            // Reconstruct each sentence from the dictionary  
+            foreach (var entry in sentenceDictionary)
             {
-                var sentence = kvp.Key;
-                var positions = kvp.Value.OrderBy(p => p.Start).ToList();
+                var plainText = entry.Key;
+                var emTags = entry.Value;
 
-                var highlightedSentence = new StringBuilder();
-                int lastIndex = 0;
-
-                foreach (var (start, end) in positions)
+                // Insert <em> tags back into the plain text without duplicating  
+                foreach (var emTag in emTags)
                 {
-                    // Append text before highlight  
-                    if (start > lastIndex)
+                    var content = Regex.Replace(emTag, @"<em>|</em>", "");
+                    // Replace only the first occurrence of the plain text  
+                    int index = plainText.IndexOf(content);
+                    if (index != -1)
                     {
-                        highlightedSentence.Append(sentence, lastIndex, start - lastIndex);
+                        plainText = plainText.Substring(0, index) + emTag + plainText.Substring(index + content.Length);
                     }
-
-                    // Append highlighted text  
-                    highlightedSentence.Append("<em>");
-                    highlightedSentence.Append(sentence, start, end - start);
-                    highlightedSentence.Append("</em>");
-                    lastIndex = end;
                 }
 
-                // Append remaining text after the last highlight  
-                if (lastIndex < sentence.Length)
-                {
-                    highlightedSentence.Append(sentence, lastIndex, sentence.Length - lastIndex);
-                }
-
-                mergedSentences.Add(highlightedSentence.ToString());
+                result.Add(plainText);
             }
 
-            // Remove any leading or trailing spaces to avoid accidental extra content  
-            for (int i = 0; i < mergedSentences.Count; i++)
-            {
-                mergedSentences[i] = mergedSentences[i].Trim();
-            }
-
-            return mergedSentences;
+            return result;
         }
 
 
