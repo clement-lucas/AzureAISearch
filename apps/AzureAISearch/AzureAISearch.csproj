@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{0A05A198-1EA7-438D-983A-EDAE6E3D571A}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>FujitsuAzureAISearch</RootNamespace>
-    <AssemblyName>FujitsuAzureAISearch</AssemblyName>
+    <RootNamespace>AzureAISearch</RootNamespace>
+    <AssemblyName>AzureAISearch</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
